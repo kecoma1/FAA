@@ -3,12 +3,13 @@ import numpy as np
 
 class Datos:
 
-    nominalAtributos = []
-    diccionario = {}
-    datos = None
-
     # Constructor: procesar el fichero para asignar correctamente las variables nominalAtributos, datos y diccionarios
     def __init__(self, nombreFichero):
+        self.nominalAtributos = []
+        self.diccionario = {}
+        self.datos = None
+        
+        
         df = pd.read_csv(nombreFichero)
 
         # Construimos la lista nominal atributos
