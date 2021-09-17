@@ -1,3 +1,5 @@
 .ipynb_checkpoints
 ConjuntosDatos
 *.pyc
+__pycache__
+a.py
