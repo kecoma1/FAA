@@ -3,8 +3,12 @@ import numpy as np
 
 class Datos:
 
-    # Constructor: procesar el fichero para asignar correctamente las variables nominalAtributos, datos y diccionarios
     def __init__(self, nombreFichero):
+        """Constructor de la clase datos.
+
+        Args:
+            nombreFichero (str): Nombre del fichero con los datos.
+        """
         self.nominalAtributos = []
         self.diccionario = {}
         self.datos = None
@@ -73,7 +77,3 @@ class Datos:
         for i, item in enumerate(df.iterrows()):
             for j, col in enumerate(item[1].items()):
                 self.datos[i][j] = self.diccionario[col[0]][col[1]]
-
-    
-
-
