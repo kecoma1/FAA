@@ -53,13 +53,13 @@ class Datos:
             df (Pandas Dataframe): Dataframe pandas con todos los datos.
         """
         for item in df.iteritems():
-            column_name = item[0]
-            possible_values = list(df[column_name].unique()).copy()
-            possible_values.sort()
-            for i, value in enumerate(possible_values):
-                if column_name not in self.diccionario:
-                    self.diccionario[column_name] = {}
-                self.diccionario[column_name][value] = i
+            columnName = item[0]
+            possibleValues = list(df[columnName].unique()).copy()
+            possibleValues.sort()
+            for i, value in enumerate(possibleValues):
+                if columnName not in self.diccionario:
+                    self.diccionario[columnName] = {}
+                self.diccionario[columnName][value] = i
 
 
     def construyeDatos(self, df):
@@ -75,5 +75,5 @@ class Datos:
                 self.datos[i][j] = self.diccionario[col[0]][col[1]]
 
     
-    
+
 
