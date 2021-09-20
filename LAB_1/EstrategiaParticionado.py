@@ -61,8 +61,8 @@ class ValidacionSimple(EstrategiaParticionado):
         longitudDatos = np.shape(datos)[0]
         
         # Permutamos los datos (solo las filas)
-        np.random.shuffle(datos)
         random.seed(seed)
+        np.random.shuffle(datos)
         
         for i in range(self.numeroEjecuciones):
             particiones.append(Particion())
@@ -80,8 +80,16 @@ class ValidacionSimple(EstrategiaParticionado):
 
 
 class ValidacionCruzada(EstrategiaParticionado):
-    
+    """Clase que define una estrategia de particionado,
+    en concreto, validación simple.
+    """
+
     def __init__(self, numeroParticiones):
+        """Construcor.
+
+        Args:
+            numeroParticiones (int): Número de particiones de la validación cruzada.
+        """
         super().__init__()
         self.numeroParticiones = numeroParticiones
         
@@ -89,8 +97,25 @@ class ValidacionCruzada(EstrategiaParticionado):
     # Crea particiones segun el metodo de validacion cruzada.
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
     # Esta funcion devuelve una lista de particiones (clase Particion)
-    # TODO: implementar
-    def creaParticiones(self,datos,seed=None):   
+    def creaParticiones(self,datos,seed=None):
+        particiones = []
+        longitudDatos = np.shape(datos)[0]
+        longitudPorcion = int(longitudDatos/self.numeroParticiones)
+        
+        # Permutamos los datos (solo las filas)
         random.seed(seed)
-        pass
-    
+        np.random.shuffle(datos)
+        
+        for i in range(self.numeroParticiones):
+            particiones.append(Particion())
+
+            # Calculamos los indices del test
+            fromTest = i*longitudPorcion
+            toTest = fromTest + longitudPorcion
+            
+            # Asignamos los indices
+            particiones[-1].indicesTest = [fromTest, toTest]
+            particiones[-1].indicesTrain = [toTest if toTest != longitudDatos else 0,
+                                            fromTest if fromTest != 0 else longitudDatos]
+        
+        return particiones
