@@ -35,8 +35,14 @@ class Clasificador:
 			datos: Matriz numpy con los datos de entrenamiento
 			pred: Predicción
 		"""
-        # Aqui se compara la prediccion (pred) con las clases reales y se calcula el error
-        pass
+		error = 0.0
+		errores = 0
+
+		for i in range(datos.datos.shape[0]):
+			if datos[i] != pred[i]:
+				errores += 1
+
+		return (errores/datos.datos.shape[0])*100
 
     
 	def validacion(self, particionado, dataset, clasificador, seed=None):

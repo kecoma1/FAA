@@ -24,8 +24,6 @@ class EstrategiaParticionado:
         """Constructor, solo se declaran los atributos.
         """
         self.particiones = []
-        self.clasificador = None
-        self.datos = None
     
     @abstractmethod
     def creaParticiones(self,datos,seed=None):
@@ -57,26 +55,22 @@ class ValidacionSimple(EstrategiaParticionado):
     # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado y el n�mero de ejecuciones deseado
     # Devuelve una lista de particiones (clase Particion)
     def creaParticiones(self,datos,seed=None):
-        particiones = []
-        longitudDatos = np.shape(datos)[0]
-        
-        # Permutamos los datos (solo las filas)
         random.seed(seed)
-        np.random.shuffle(datos)
-        
+        self.particiones = []
+        longitudDatos = np.shape(datos)[0]
+        longitudTest = int((self.proporcionTest/100)*longitudDatos)
+                
+        lista_valores = [i for i in range(longitudDatos)]
+
         for i in range(self.numeroEjecuciones):
-            particiones.append(Particion())
+            self.particiones.append(Particion())
             
             # Calculamos los indices
-            fromTest = int(random.randrange(0, longitudDatos))
-            longitudTest = int((self.proporcionTest/100)*longitudDatos)
-            toTest = fromTest+longitudTest if fromTest+longitudTest <= longitudDatos else longitudTest-(longitudDatos-fromTest)
+            random.shuffle(lista_valores)
             
             # Asignamos los indices
-            particiones[-1].indicesTest = [fromTest, toTest]
-            particiones[-1].indicesTrain = [toTest, fromTest]
-        
-        return particiones
+            self.particiones[-1].indicesTest = lista_valores[:longitudTest]
+            self.particiones[-1].indicesTrain = lista_valores[longitudTest:]
 
 
 class ValidacionCruzada(EstrategiaParticionado):
@@ -98,24 +92,21 @@ class ValidacionCruzada(EstrategiaParticionado):
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
     # Esta funcion devuelve una lista de particiones (clase Particion)
     def creaParticiones(self,datos,seed=None):
-        particiones = []
+        random.seed(seed)
+        self.particiones = []
         longitudDatos = np.shape(datos)[0]
         longitudPorcion = int(longitudDatos/self.numeroParticiones)
         
-        # Permutamos los datos (solo las filas)
-        random.seed(seed)
-        np.random.shuffle(datos)
-        
+        lista_valores = [i for i in range(longitudDatos)]
+        random.shuffle(lista_valores)
+            
         for i in range(self.numeroParticiones):
-            particiones.append(Particion())
+            self.particiones.append(Particion())
 
             # Calculamos los indices del test
             fromTest = i*longitudPorcion
             toTest = fromTest + longitudPorcion
-            
+
             # Asignamos los indices
-            particiones[-1].indicesTest = [fromTest, toTest]
-            particiones[-1].indicesTrain = [toTest if toTest != longitudDatos else 0,
-                                            fromTest if fromTest != 0 else longitudDatos]
-        
-        return particiones
+            self.particiones[-1].indicesTest = lista_valores[fromTest:toTest]
+            self.particiones[-1].indicesTrain = [i for i in lista_valores if i not in self.particiones[-1].indicesTest]

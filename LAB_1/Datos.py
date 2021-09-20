@@ -1,3 +1,4 @@
+from random import shuffle
 import pandas as pd
 import numpy as np
 
@@ -13,7 +14,7 @@ class Datos:
         self.diccionario = {}
         self.datos = None
         
-        
+        # Dataframe pandas
         df = pd.read_csv(nombreFichero)
 
         # Construimos la lista nominal atributos
@@ -28,7 +29,12 @@ class Datos:
         
     # Devuelve el subconjunto de los datos cuyos �ndices se pasan como argumento
     def extraeDatos(self,idx):
-        pass
+        datos = np.zeros(shape=(len(idx), self.datos.shape[1]))
+
+        for i, index in enumerate(idx):
+            datos[i] = self.datos[index]
+        
+        return datos
 
 
     def asignaNominalAtributos(self, tipos):
