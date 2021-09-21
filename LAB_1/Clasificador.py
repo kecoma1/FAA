@@ -35,11 +35,10 @@ class Clasificador:
 			datos: Matriz numpy con los datos de entrenamiento
 			pred: Predicción
 		"""
-		error = 0.0
 		errores = 0
 
 		for i in range(datos.datos.shape[0]):
-			if datos[i] != pred[i]:
+			if datos[i][-1] != pred[i]:
 				errores += 1
 
 		return (errores/datos.datos.shape[0])*100

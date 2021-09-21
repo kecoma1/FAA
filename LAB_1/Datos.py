@@ -26,9 +26,16 @@ class Datos:
         # Construimos y traducimos el array de datos
         self.construyeDatos(df)
 
-        
-    # Devuelve el subconjunto de los datos cuyos �ndices se pasan como argumento
+
     def extraeDatos(self,idx):
+        """Devuelve el subconjunto de los datos cuyos �ndices se pasan como argumento
+
+        Args:
+            idx (list): Lista que contiene los indices a recibir de los datos.
+
+        Returns:
+            Matriz numpy: Matriz numpy con los índices que se especifican.
+        """
         datos = np.zeros(shape=(len(idx), self.datos.shape[1]))
 
         for i, index in enumerate(idx):
