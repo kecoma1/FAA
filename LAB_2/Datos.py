@@ -62,14 +62,16 @@ class Datos:
         Args:
             df (Pandas Dataframe): Dataframe pandas con todos los datos.
         """
-        for item in df.iteritems():
+        for i, item in enumerate(df.iteritems()):
             columnName = item[0]
             possibleValues = list(df[columnName].unique()).copy()
             possibleValues.sort()
-            for i, value in enumerate(possibleValues):
+            for n, value in enumerate(possibleValues):
+                if not self.nominalAtributos[i]:
+                    continue
                 if columnName not in self.diccionario:
                     self.diccionario[columnName] = {}
-                self.diccionario[columnName][value] = i
+                self.diccionario[columnName][value] = n
 
 
     def construyeDatos(self, df):
@@ -82,4 +84,7 @@ class Datos:
         self.datos = np.zeros(shape=df.shape)
         for i, item in enumerate(df.iterrows()):
             for j, col in enumerate(item[1].items()):
-                self.datos[i][j] = self.diccionario[col[0]][col[1]]
+                if self.nominalAtributos[j]:
+                    self.datos[i][j] = self.diccionario[col[0]][col[1]]
+                else:
+                    self.datos[i][j] = col[1]
