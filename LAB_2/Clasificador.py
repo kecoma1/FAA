@@ -67,20 +67,23 @@ class Clasificador:
 
 class ClasificadorNaiveBayes(Clasificador):
 	"""Clase que define un clasificador el cuál usa el algoritmo de
-		Naive Bayes. Las probabilidades se guardan en 2*2 atributos:
-		* Un diccionario en el cual se guarda como clave el VALOR DE LA CLASE
-		y como valor, el VALOR DE LA PROBABILIDAD.
-		* Un array Numpy el cual tiene la siguiente forma: 
+		Naive Bayes. Las probabilidades se guardan en 3 atributos:
+		* Un Array numpy con la frecuencia de cada clase.
+		* Un array numpy donde se guardan las probabilidades a priori.
+		* Una matriz Numpy el cual tiene la siguiente forma: 
 			Nº filas = Nº clases
-			Nº columnas = Nº Atributos*posibles valores de cada Atributo
-		De esta forma se guarda en la fila X y la columna Y P(Y | X), siendo X 
-		la clase e Y el atributo/dato/columna.
+			Nº columnas = Nº Atributos
+		De esta forma se guarda en la fila X y la columna Y un array numpy
+		con las probabilidades condicionales de la clase y el atributo.
 		Por ejemplo:
-				Atr1:Val1		Atr1:Val2			Atr2			....
-		C1		P(Atr1:1|C1)	P(Atr1:2|C1)		P(Atr2:1|C1)
-		C2		P(Atr1:1|C2)	P(Atr1:2|C2)		P(Atr2:1|C2)
-		...
-		...
+			P(Yi | X), siendo X la clase e Yi el atributo/dato/columna.
+			Y es una array numpy que contiene cada probabilidad condicional
+			de esa columna.
+		Por ejemplo:
+				Atr1								Atr2					...
+		C1		[P(Atr1[0]|C1), P(Atr1[1]|C1) ...]	[P(Atr2[0]|C1), ...]	...
+		C2		[P(Atr1[0]|C2), P(Atr1[1]|C2) ...]	[P(Atr2[0]|C2), ...]	...
+		...		...									...
 
 		Estos mismos atributos también se crean pero aplicando la corrección de LaPlace (CLP).
 	"""
@@ -92,12 +95,14 @@ class ClasificadorNaiveBayes(Clasificador):
 			numClases: Número valores de la clase en el dataset.
 			numAtributos: Número de atributos en el dataset.
 		"""
+		self.clasesFreq = None
 		self.pClases = {}
-		self.pCondicionales = np.zeros(shape=(numClases, numAtributos))
+		self.pCondicionales = None
 
 		# Atributos con la corrección de la Laplace
+		self.CLPclasesFreq = None
 		self.CLPpClases = {}
-		self.CLPpCondicionales = np.zeros(shape=(numClases, numAtributos))
+		self.CLPpCondicionales = None
 
 
 	def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
@@ -128,12 +133,40 @@ class ClasificadorNaiveBayes(Clasificador):
 			diccionario (dict): Diccionario con los atributos y las clases.
 		"""
 		# Obtenemos la frecuencia de los valores en las columnas
-		_, freq = np.unique(datostrain.datos[:,-1], return_counts=True)
+		_, freq = list(np.unique(datostrain[:,-1], return_counts=True))
+		total = sum(freq)
+		self.pClases = np.array([i/total for i in freq])
 
-		# Obtenemos los nombres de las clases
-		colNames = list(list(diccionario.items())[-1][1].keys())
-		for i, col in enumerate(colNames):
-			self.pClases[col] = freq[i] # TODO pasar pClases a array asi se accede mejor
 
 	def calculaPCondicionadas(self, datostrain, atributosDiscretos, diccionario):
-		a = 0
+		# Calculamos el número de filas y columnas de la matriz 
+		# con las probabilidades condicionadas
+		nCols = datostrain.shape[1]-1
+		nRows = len(list(np.unique(datostrain[-1])))
+
+		# Construimos la matriz
+		pCondicionales = []
+		for i in range(nRows):
+			pCondicionales.append([])
+			for n in range(nCols):
+				columnas = len(list(np.unique(datostrain[n])))
+				pCondicionales[i].append(np.zeros(columnas))
+
+		# Calculamos las probabilidades condicionales
+		cols = np.unique(datostrain[:,-1])
+		for i, classVal in enumerate(cols): # Por cada valor de la clase
+			for n, atr in enumerate(diccionario.items()): # Por cada atributo/columna
+				
+				if n == len(diccionario)-1: # En caso de que lleguemos a la clase
+					break
+				elif not atributosDiscretos[n]: # En caso de que no sea discreto calculamos la probabilidad continua
+					pass # calcula probabilidad_continua
+
+				# Declaramos el array interno de cada atributo_i|clase
+				pCondicionales[i][n] = np.zeros(len(atr[1]))
+				for atrValue in range(len(atr[1])): # Por cada valor en el atributo
+
+					for row in datostrain: # Comprobamos cada la fila
+						if row[-1] == classVal and row[n] == atrValue:
+							pCondicionales[i][n][atrValue] += 1
+					pCondicionales[i][n][atrValue] /= self.freq[i]
