@@ -88,7 +88,7 @@ class ClasificadorNaiveBayes(Clasificador):
 		Estos mismos atributos también se crean pero aplicando la corrección de LaPlace (CLP).
 	"""
 
-	def __init__(self, numClases, numAtributos):
+	def __init__(self):
 		"""Constructor.
 
 		Args:
@@ -118,8 +118,8 @@ class ClasificadorNaiveBayes(Clasificador):
 		self.calculaPClases(datostrain, diccionario)
 
 		# Calculamos las probabilidades condicionadas
-		self.calculaPCondicionadas(datostrain, atributosDiscretos, diccionario)
-	
+		self.calculaPCondicionales(datostrain, atributosDiscretos, diccionario)
+
 
 	# TODO: implementar
 	def clasifica(self, datostest, atributosDiscretos, diccionario):
@@ -133,40 +133,50 @@ class ClasificadorNaiveBayes(Clasificador):
 			diccionario (dict): Diccionario con los atributos y las clases.
 		"""
 		# Obtenemos la frecuencia de los valores en las columnas
-		_, freq = list(np.unique(datostrain[:,-1], return_counts=True))
-		total = sum(freq)
-		self.pClases = np.array([i/total for i in freq])
+		_, self.freq = list(np.unique(datostrain[:,-1], return_counts=True))
+		total = sum(self.freq)
+		self.pClases = np.array([i/total for i in self.freq])
 
 
-	def calculaPCondicionadas(self, datostrain, atributosDiscretos, diccionario):
+	def calculaPCondicionales(self, datostrain, atributosDiscretos, diccionario):
 		# Calculamos el número de filas y columnas de la matriz 
 		# con las probabilidades condicionadas
 		nCols = datostrain.shape[1]-1
-		nRows = len(list(np.unique(datostrain[-1])))
+		nRows = len(list(np.unique(datostrain[:,-1])))
 
 		# Construimos la matriz
-		pCondicionales = []
+		self.pCondicionales = []
 		for i in range(nRows):
-			pCondicionales.append([])
+			self.pCondicionales.append([])
 			for n in range(nCols):
 				columnas = len(list(np.unique(datostrain[n])))
-				pCondicionales[i].append(np.zeros(columnas))
+				self.pCondicionales[i].append(np.zeros(columnas))
 
 		# Calculamos las probabilidades condicionales
-		cols = np.unique(datostrain[:,-1])
-		for i, classVal in enumerate(cols): # Por cada valor de la clase
-			for n, atr in enumerate(diccionario.items()): # Por cada atributo/columna
-				
-				if n == len(diccionario)-1: # En caso de que lleguemos a la clase
-					break
-				elif not atributosDiscretos[n]: # En caso de que no sea discreto calculamos la probabilidad continua
-					pass # calcula probabilidad_continua
+		for classIndex in range(nRows): # Por cada valor de la clase
+			# Obtenemos el valor específico de la clase
+			if atributosDiscretos[-1]:
+				classValue =list(list(diccionario.items())[-1][1].values())[classIndex]
+			else:
+				classValue = list(np.unique(datostrain[:,-1]))[classIndex]
+			for atrIndex in range(nCols): # Por cada atributo/columna
+				# Query para obtener unicamente las filas con la clase deseada
+				rowsToCheck = np.where(datostrain[:,-1]==classValue)
+				if not atributosDiscretos[atrIndex]: # En caso de que no sea discreto calculamos la probabilidad continua
+					continue # calcula probabilidad_continua
+				else:
+					if atrIndex == len(diccionario)-1: # En caso de que lleguemos a la clase
+						break
+					else:
+						self.calculaPCondicionalDiscreta(atrIndex, classIndex, classValue, rowsToCheck, datostrain, diccionario)
 
-				# Declaramos el array interno de cada atributo_i|clase
-				pCondicionales[i][n] = np.zeros(len(atr[1]))
-				for atrValue in range(len(atr[1])): # Por cada valor en el atributo
+	def calculaPCondicionalDiscreta(self, atrIndex, classIndex, classValue, rowsToCheck, datostrain, diccionario):
+		# Declaramos el array interno de cada atributo_i|clase
+		uniqueInCol = len(list(diccionario.values())[atrIndex].values())
+		self.pCondicionales[classIndex][atrIndex] = np.zeros(uniqueInCol)
 
-					for row in datostrain: # Comprobamos cada la fila
-						if row[-1] == classVal and row[n] == atrValue:
-							pCondicionales[i][n][atrValue] += 1
-					pCondicionales[i][n][atrValue] /= self.freq[i]
+		for atrValue in range(uniqueInCol): # Por cada valor en el atributo
+			for row in datostrain[rowsToCheck]: # Comprobamos cada la fila
+				if row[-1] == classValue and row[atrIndex] == atrValue:
+					self.pCondicionales[classIndex][atrIndex][atrValue] += 1
+			self.pCondicionales[classIndex][atrIndex][atrValue] /= self.freq[classIndex]

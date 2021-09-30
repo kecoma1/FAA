@@ -54,8 +54,9 @@ class Datos:
         un diccionario de diccionarios en el que se muestra
         el valor que puede tener cada atributo. Ejemplo:
         {
-            "Attr1": {"x": 1, "y": 2} -- Orden alfabético
+            "Attr1": {"x": 1, "y": 2} # Orden alfabético
             "Attr2": {"x": 1, "y": 2}
+            "Attr3": {} # Valor continuo
             ...
         }
         
@@ -67,10 +68,10 @@ class Datos:
             possibleValues = list(df[columnName].unique()).copy()
             possibleValues.sort()
             for n, value in enumerate(possibleValues):
-                if not self.nominalAtributos[i]:
-                    continue
                 if columnName not in self.diccionario:
                     self.diccionario[columnName] = {}
+                if not self.nominalAtributos[i]:
+                    continue
                 self.diccionario[columnName][value] = n
 
 
