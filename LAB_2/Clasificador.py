@@ -95,13 +95,11 @@ class ClasificadorNaiveBayes(Clasificador):
 			numClases: Número valores de la clase en el dataset.
 			numAtributos: Número de atributos en el dataset.
 		"""
-		self.clasesFreq = None
+		self.Freq = None
 		self.pClases = {}
 		self.pCondicionales = None
 
 		# Atributos con la corrección de la Laplace
-		self.CLPclasesFreq = None
-		self.CLPpClases = {}
 		self.CLPpCondicionales = None
 
 
@@ -146,11 +144,14 @@ class ClasificadorNaiveBayes(Clasificador):
 
 		# Construimos la matriz
 		self.pCondicionales = []
+		self.CLPpCondicionales = []
 		for i in range(nRows):
 			self.pCondicionales.append([])
+			self.CLPpCondicionales.append([])
 			for n in range(nCols):
 				columnas = len(list(np.unique(datostrain[n])))
 				self.pCondicionales[i].append(np.zeros(columnas))
+				self.CLPpCondicionales[i].append(np.zeros(columnas))
 
 		# Calculamos las probabilidades condicionales
 		for classIndex in range(nRows): # Por cada valor de la clase
@@ -170,13 +171,25 @@ class ClasificadorNaiveBayes(Clasificador):
 					else:
 						self.calculaPCondicionalDiscreta(atrIndex, classIndex, classValue, rowsToCheck, datostrain, diccionario)
 
+
 	def calculaPCondicionalDiscreta(self, atrIndex, classIndex, classValue, rowsToCheck, datostrain, diccionario):
 		# Declaramos el array interno de cada atributo_i|clase
 		uniqueInCol = len(list(diccionario.values())[atrIndex].values())
 		self.pCondicionales[classIndex][atrIndex] = np.zeros(uniqueInCol)
+		self.CLPpCondicionales[classIndex][atrIndex] = np.zeros(uniqueInCol)
+		freqs = np.zeros(uniqueInCol)
 
 		for atrValue in range(uniqueInCol): # Por cada valor en el atributo
 			for row in datostrain[rowsToCheck]: # Comprobamos cada la fila
 				if row[-1] == classValue and row[atrIndex] == atrValue:
 					self.pCondicionales[classIndex][atrIndex][atrValue] += 1
+			freqs[atrValue] = self.pCondicionales[classIndex][atrIndex][atrValue]
 			self.pCondicionales[classIndex][atrIndex][atrValue] /= self.freq[classIndex]
+
+		if 0 in self.pCondicionales[classIndex][atrIndex]:
+			for i in range(uniqueInCol):
+				# Para calcular la correción de laplace añadimos 1
+				self.CLPpCondicionales[classIndex][atrIndex][i] = freqs[i] + 1
+				self.CLPpCondicionales[classIndex][atrIndex][i] /= (self.freq[classIndex] + len(self.CLPpCondicionales[classIndex][atrIndex]))
+		else:
+			self.CLPpCondicionales[classIndex][atrIndex] = np.copy(self.pCondicionales[classIndex][atrIndex])
