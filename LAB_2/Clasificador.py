@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 
 class Clasificador:
@@ -37,7 +38,6 @@ class Clasificador:
 				datos: Matriz numpy con los datos de entrenamiento
 				pred: Predicción
 		"""
-		error = 0.0
 		errores = 0
 
 		for i in range(datos.datos.shape[0]):
@@ -90,6 +90,11 @@ class ClasificadorNaiveBayes(Clasificador):
 		En el caso de los atributos continuos se guarda una lista con 2 elementos, la media y la varianza:
 		...		Atr1
 		CX		[media, varianza] # En este mismo orden
+
+		Existen 2 atributos más en los cuales se guardan los modelos
+		CLPModel = (valor real, valor traduccion, probabilidad)
+		model = (valor real, valor traduccion, probabilidad)
+		En estos diccionarios se guarda la decisión final del modelo.
 	"""
 
 	def __init__(self):
@@ -106,6 +111,10 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Atributos con la corrección de la Laplace
 		self.CLPpCondicionales = None
 
+		# Probabilidades finales
+		self.CLPModel = (0, 0, 0)
+		self.model = (0, 0, 0)
+
 
 	def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
 		"""Método que calcula las probabilidades siguiendo el algoritmo
@@ -121,6 +130,9 @@ class ClasificadorNaiveBayes(Clasificador):
 
 		# Calculamos las probabilidades condicionadas
 		self.calculaPCondicionales(datostrain, atributosDiscretos, diccionario)
+
+		# Calcula la probabilidad del modelo
+		#self.calculaModelo(diccionario, atributosDiscretos)
 
 
 	# TODO: implementar
@@ -167,10 +179,7 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Calculamos las probabilidades condicionales
 		for classIndex in range(nRows): # Por cada valor de la clase
 			# Obtenemos el valor específico de la clase a comprobar
-			if atributosDiscretos[-1]:
-				classValue =list(list(diccionario.items())[-1][1].values())[classIndex]
-			else:
-				classValue = list(np.unique(datostrain[:,-1]))[classIndex]
+			classValue =list(list(diccionario.items())[-1][1].values())[classIndex]
 			for atrIndex in range(nCols): # Por cada atributo/columna
 				# Query para obtener unicamente las filas con la clase deseada
 				rowsToCheck = np.where(datostrain[:,-1]==classValue)
@@ -226,3 +235,28 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Guardamos la media y la varianza
 		self.pCondicionales[classIndex][atrIndex][0] = np.mean(datostrain[:,atrIndex])
 		self.pCondicionales[classIndex][atrIndex][1] = np.var(datostrain[:,atrIndex])
+
+
+	def calculaModelo(self, diccionario, atributosDiscretos):
+		"""Función para crear el modelo Naive bayes.
+		
+		Args:
+			diccionario (dict): Diccionario con las clases y atributos, y sus traducciones.
+			atributosDiscretos (list): Lista con valores booleanos por si son nominales o no.
+		"""
+		probs = []
+		for i, row in enumerate(self.pCondicionales):
+			prob = 1
+			for n, col in enumerate(row):
+				if atributosDiscretos[n]:
+					prob *= self.pCondicionales[i][n]
+				else:
+        			prob *= norm(self.pCondicionales[i][n][0], self.pCondicionales[i][n][1]).pdf()
+		prob *= self.pClases[i]
+		probs.append(prob)
+
+		model = (0, 0, 0)
+		for i, prob in enumerate(probs):
+			if prob > model[-1]:
+				classVal = list(list(diccionario.values())[-1].items())[i]
+				model = (classVal[0], classVal[1], prob)

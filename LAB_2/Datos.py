@@ -15,7 +15,7 @@ class Datos:
         self.datos = None
         
         # Dataframe pandas
-        df = pd.read_csv(nombreFichero)
+        df = pd.read_csv(nombreFichero, dtype={'Class': object})
 
         # Construimos la lista nominal atributos
         self.asignaNominalAtributos(df.dtypes)
