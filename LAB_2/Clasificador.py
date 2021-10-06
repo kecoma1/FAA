@@ -40,11 +40,11 @@ class Clasificador:
 		"""
 		errores = 0
 
-		for i in range(datos.datos.shape[0]):
+		for i in range(datos.shape[0]):
 			if datos[i][-1] != pred[i]:
 				errores += 1
 
-		return (errores/datos.datos.shape[0])*100
+		return (errores/datos.shape[0])*100
 
 	def validacion(self, particionado, dataset, clasificador, seed=None):
 		""" Realiza una clasificacion utilizando una estrategia de particionado determinada
@@ -129,6 +129,7 @@ class ClasificadorNaiveBayes(Clasificador):
 
 		for k, row in enumerate(datostest):
 			decision = (-1, -1) # [0]: Indice clase con mayor probabilidad; [1] Probabilidad
+			decisionCLP = (-1, -1)
 			for i, _ in enumerate(list(list(diccionario.values())[-1].values())): # Por cada clase
 				prob = 1
 				probCLP = 1
@@ -137,16 +138,24 @@ class ClasificadorNaiveBayes(Clasificador):
 						break
 					if atributosDiscretos[j]: # Probabilidad para atributo discreto
 						prob *= self.pCondicionales[i][j][int(col)]
+						probCLP *= self.pCondicionalesCLP[i][j][int(col)]
 					else: # Probabilidad para atributo continuo
 						media = self.pCondicionales[i][j][0]
 						var = self.pCondicionales[i][j][1]
 						p = norm(media, var).pdf(col)
-						prob *= norm(media, var).pdf(col)
+						prob *= p
+						probCLP *= p
 
-				if prob > decision[1]: # Guardamos la clase más probable
+				# Guardamos la clase más probable
+				if prob > decision[1]:
 					decision = (i, prob)
-			result[k] = decision[0] # Asignamos la clase a la fila
-		return result
+				if probCLP > decisionCLP[1]:
+					decisionCLP = (i, probCLP)
+
+			# Asignamos la clase a la fila
+			result[k] = decision[0] 
+			resultCLP[k] = decisionCLP[0]
+		return result, resultCLP
 
 
 	def calculaPClases(self, datostrain):
