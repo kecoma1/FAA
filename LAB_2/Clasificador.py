@@ -41,7 +41,7 @@ class Clasificador:
 		errores = 0
 
 		for i in range(datos.datos.shape[0]):
-			if datos[i] != pred[i]:
+			if datos[i][-1] != pred[i]:
 				errores += 1
 
 		return (errores/datos.datos.shape[0])*100
@@ -90,11 +90,6 @@ class ClasificadorNaiveBayes(Clasificador):
 		En el caso de los atributos continuos se guarda una lista con 2 elementos, la media y la varianza:
 		...		Atr1
 		CX		[media, varianza] # En este mismo orden
-
-		Existen 2 atributos más en los cuales se guardan los modelos
-		CLPModel = (valor real, valor traduccion, probabilidad)
-		model = (valor real, valor traduccion, probabilidad)
-		En estos diccionarios se guarda la decisión final del modelo.
 	"""
 
 	def __init__(self):
@@ -109,11 +104,7 @@ class ClasificadorNaiveBayes(Clasificador):
 		self.pCondicionales = None
 
 		# Atributos con la corrección de la Laplace
-		self.CLPpCondicionales = None
-
-		# Probabilidades finales
-		self.CLPModel = (0, 0, 0)
-		self.model = (0, 0, 0)
+		self.pCondicionalesCLP = None
 
 
 	def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
@@ -131,13 +122,31 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Calculamos las probabilidades condicionadas
 		self.calculaPCondicionales(datostrain, atributosDiscretos, diccionario)
 
-		# Calcula la probabilidad del modelo
-		#self.calculaModelo(diccionario, atributosDiscretos)
 
-
-	# TODO: implementar
 	def clasifica(self, datostest, atributosDiscretos, diccionario):
-		pass
+		result = np.zeros(datostest.shape[0])
+		resultCLP = np.zeros(datostest.shape[0])
+
+		for k, row in enumerate(datostest):
+			decision = (-1, -1) # [0]: Indice clase con mayor probabilidad; [1] Probabilidad
+			for i, _ in enumerate(list(list(diccionario.values())[-1].values())): # Por cada clase
+				prob = 1
+				probCLP = 1
+				for j, col in enumerate(row): # Por cada columna del test
+					if j == datostest.shape[1]-1: # Columna clase (no se comprueba)
+						break
+					if atributosDiscretos[j]: # Probabilidad para atributo discreto
+						prob *= self.pCondicionales[i][j][int(col)]
+					else: # Probabilidad para atributo continuo
+						media = self.pCondicionales[i][j][0]
+						var = self.pCondicionales[i][j][1]
+						p = norm(media, var).pdf(col)
+						prob *= norm(media, var).pdf(col)
+
+				if prob > decision[1]: # Guardamos la clase más probable
+					decision = (i, prob)
+			result[k] = decision[0] # Asignamos la clase a la fila
+		return result
 
 
 	def calculaPClases(self, datostrain):
@@ -167,14 +176,14 @@ class ClasificadorNaiveBayes(Clasificador):
 
 		# Construimos la matriz
 		self.pCondicionales = []
-		self.CLPpCondicionales = []
+		self.pCondicionalesCLP = []
 		for i in range(nRows):
 			self.pCondicionales.append([])
-			self.CLPpCondicionales.append([])
+			self.pCondicionalesCLP.append([])
 			for n in range(nCols):
 				columnas = len(list(np.unique(datostrain[n])))
 				self.pCondicionales[i].append(np.zeros(columnas))
-				self.CLPpCondicionales[i].append(np.zeros(columnas))
+				self.pCondicionalesCLP[i].append(np.zeros(columnas))
 
 		# Calculamos las probabilidades condicionales
 		for classIndex in range(nRows): # Por cada valor de la clase
@@ -202,7 +211,7 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Declaramos el array interno de cada atributo_i|clase
 		uniqueInCol = len(list(diccionario.values())[atrIndex].values())
 		self.pCondicionales[classIndex][atrIndex] = np.zeros(uniqueInCol)
-		self.CLPpCondicionales[classIndex][atrIndex] = np.zeros(uniqueInCol) # Array laplace
+		self.pCondicionalesCLP[classIndex][atrIndex] = np.zeros(uniqueInCol) # Array laplace
 		freqs = np.zeros(uniqueInCol)
 
 		for atrValue in range(uniqueInCol): # Por cada valor en el atributo
@@ -216,10 +225,10 @@ class ClasificadorNaiveBayes(Clasificador):
 		if 0 in self.pCondicionales[classIndex][atrIndex]:
 			for i in range(uniqueInCol):
 				# Para calcular la correción de laplace añadimos 1
-				self.CLPpCondicionales[classIndex][atrIndex][i] = freqs[i] + 1
-				self.CLPpCondicionales[classIndex][atrIndex][i] /= (self.freq[classIndex] + len(self.CLPpCondicionales[classIndex][atrIndex]))
+				self.pCondicionalesCLP[classIndex][atrIndex][i] = freqs[i] + 1
+				self.pCondicionalesCLP[classIndex][atrIndex][i] /= (self.freq[classIndex] + len(self.pCondicionalesCLP[classIndex][atrIndex]))
 		else:
-			self.CLPpCondicionales[classIndex][atrIndex] = np.copy(self.pCondicionales[classIndex][atrIndex])
+			self.pCondicionalesCLP[classIndex][atrIndex] = np.copy(self.pCondicionales[classIndex][atrIndex])
 
 
 	def calculaPCondicionalContinua(self, atrIndex, classIndex, datostrain):
@@ -237,26 +246,3 @@ class ClasificadorNaiveBayes(Clasificador):
 		self.pCondicionales[classIndex][atrIndex][1] = np.var(datostrain[:,atrIndex])
 
 
-	def calculaModelo(self, diccionario, atributosDiscretos):
-		"""Función para crear el modelo Naive bayes.
-		
-		Args:
-			diccionario (dict): Diccionario con las clases y atributos, y sus traducciones.
-			atributosDiscretos (list): Lista con valores booleanos por si son nominales o no.
-		"""
-		probs = []
-		for i, row in enumerate(self.pCondicionales):
-			prob = 1
-			for n, col in enumerate(row):
-				if atributosDiscretos[n]:
-					prob *= self.pCondicionales[i][n]
-				else:
-        			prob *= norm(self.pCondicionales[i][n][0], self.pCondicionales[i][n][1]).pdf()
-		prob *= self.pClases[i]
-		probs.append(prob)
-
-		model = (0, 0, 0)
-		for i, prob in enumerate(probs):
-			if prob > model[-1]:
-				classVal = list(list(diccionario.values())[-1].items())[i]
-				model = (classVal[0], classVal[1], prob)
