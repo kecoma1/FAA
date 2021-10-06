@@ -16,10 +16,9 @@ class Particion():
 class EstrategiaParticionado:
     """Clase abstracta donde se define la estrategia de particionado.
     """
-  
     # Clase abstracta
     __metaclass__ = ABCMeta
-  
+
     def __init__(self):
         """Constructor, solo se declaran los atributos.
         """
@@ -40,7 +39,7 @@ class ValidacionSimple(EstrategiaParticionado):
     """Clase que define una estrategia de particionado,
     en concreto, validación simple.
     """
-  
+
     def __init__(self, proporcionTest, numeroEjecuciones):
         """Constructor.
 
@@ -86,8 +85,7 @@ class ValidacionCruzada(EstrategiaParticionado):
         """
         super().__init__()
         self.numeroParticiones = numeroParticiones
-        
-  
+
     # Crea particiones segun el metodo de validacion cruzada.
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
     # Esta funcion devuelve una lista de particiones (clase Particion)

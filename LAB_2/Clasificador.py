@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
-import pandas as pd
+import EstrategiaParticionado
 from scipy.stats import norm
 
 
@@ -8,6 +8,7 @@ class Clasificador:
 
 	# Clase abstracta
 	__metaclass__ = ABCMeta
+
 
 	@abstractmethod
 	def entrenamiento(self, datosTrain, nominalAtributos, diccionario):
@@ -20,6 +21,7 @@ class Clasificador:
 		"""
 		pass
 
+
 	@abstractmethod
 	def clasifica(self, datosTest, nominalAtributos, diccionario):
 		"""Esta funcion debe ser implementada en cada clasificador concreto. Devuelve un numpy array con las predicciones
@@ -30,6 +32,7 @@ class Clasificador:
 				diccionario: Array de diccionarios de la estructura Datos utilizados para la codificacion de variables discretas
 		"""
 		pass
+
 
 	def error(self, datos, pred):
 		"""Obtiene el numero de aciertos y errores para calcular la tasa de fallo
@@ -46,6 +49,7 @@ class Clasificador:
 
 		return (errores/datos.shape[0])*100
 
+
 	def validacion(self, particionado, dataset, clasificador, seed=None):
 		""" Realiza una clasificacion utilizando una estrategia de particionado determinada
 
@@ -54,8 +58,23 @@ class Clasificador:
 				dataset: Dataset
 				clasificador: Clasificador a usar
 		"""
+		# Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
+		particionado.creaParticiones(dataset.datos)
+		mediaError = 0
+		mediaErrorCLP = 0
+		for particion in particionado.particiones:
+			# Creamos los arrays numpy con los datos específicos
+			datosTest = dataset.datos[particion.indicesTest, :] 
+			datosTrain = dataset.datos[particion.indicesTrain, :]
 
-	# Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
+			self.entrenamiento(datosTrain, dataset.nominalAtributos, dataset.diccionario)
+			res, resCLP = clasificador.clasifica(datosTest, dataset.nominalAtributos, dataset.diccionario)
+			mediaError += clasificador.error(datosTest, res)/len(datosTest)
+			mediaErrorCLP += clasificador.error(datosTest, resCLP)/len(datosTest)
+		lenTest = len(particionado.particiones)
+		return mediaError/lenTest, mediaErrorCLP/lenTest
+
+
 	# - Para validacion cruzada: en el bucle hasta nv entrenamos el clasificador con la particion de train i
 	# y obtenemos el error en la particion de test i
 	# - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
