@@ -118,7 +118,7 @@ class ClasificadorNaiveBayes(Clasificador):
 			numClases: Número valores de la clase en el dataset.
 			numAtributos: Número de atributos en el dataset.
 		"""
-		self.Freq = None
+		self.freq = None
 		self.pClases = {}
 		self.pCondicionales = None
 
@@ -150,8 +150,9 @@ class ClasificadorNaiveBayes(Clasificador):
 			decision = (-1, -1) # [0]: Indice clase con mayor probabilidad; [1] Probabilidad
 			decisionCLP = (-1, -1)
 			for i, _ in enumerate(list(list(diccionario.values())[-1].values())): # Por cada clase
-				prob = 1
-				probCLP = 1
+				# Multiplicamos la probabilidad de la clase por las condicionales
+				prob = self.pClases[i]
+				probCLP = prob
 				for j, col in enumerate(row): # Por cada columna del test
 					if j == datostest.shape[1]-1: # Columna clase (no se comprueba)
 						break
@@ -184,7 +185,7 @@ class ClasificadorNaiveBayes(Clasificador):
 			datostrain (Matriz Numpy): Datos a comprobar.
 		"""
 		# Obtenemos la frecuencia de los valores en las columnas
-		_, self.freq = list(np.unique(datostrain[:,-1], return_counts=True))
+		_, self.freq = np.unique(datostrain[:,-1], return_counts=True)
 		total = sum(self.freq)
 		self.pClases = np.array([i/total for i in self.freq])
 
@@ -200,7 +201,7 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Calculamos el número de filas y columnas de la matriz 
 		# con las probabilidades condicionadas
 		nCols = datostrain.shape[1]-1
-		nRows = len(list(np.unique(datostrain[:,-1])))
+		nRows = len(np.unique(datostrain[:,-1]))
 
 		# Construimos la matriz
 		self.pCondicionales = []
@@ -216,7 +217,7 @@ class ClasificadorNaiveBayes(Clasificador):
 		# Calculamos las probabilidades condicionales
 		for classIndex in range(nRows): # Por cada valor de la clase
 			# Obtenemos el valor específico de la clase a comprobar
-			classValue =list(list(diccionario.items())[-1][1].values())[classIndex]
+			classValue =list(list(diccionario.values())[-1].values())[classIndex]
 			for atrIndex in range(nCols): # Por cada atributo/columna
 				# Query para obtener unicamente las filas con la clase deseada
 				rowsToCheck = np.where(datostrain[:,-1]==classValue)

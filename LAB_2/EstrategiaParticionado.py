@@ -61,7 +61,7 @@ class ValidacionSimple(EstrategiaParticionado):
                 
         lista_valores = [i for i in range(longitudDatos)]
 
-        for i in range(self.numeroEjecuciones):
+        for _ in range(self.numeroEjecuciones):
             self.particiones.append(Particion())
             
             # Calculamos los indices
