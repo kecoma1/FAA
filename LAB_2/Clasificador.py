@@ -42,11 +42,9 @@ class Clasificador:
 				pred: Predicción
 		"""
 		errores = 0
-
 		for i in range(datos.shape[0]):
 			if datos[i][-1] != pred[i]:
 				errores += 1
-
 		return (errores/datos.shape[0])
 
 
