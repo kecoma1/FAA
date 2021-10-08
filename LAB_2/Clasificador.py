@@ -35,7 +35,7 @@ class Clasificador:
 
 
 	def error(self, datos, pred):
-		"""Obtiene el numero de aciertos y errores para calcular la tasa de fallo
+		"""Obtiene el numero de aciertos y errores para calcular la tasa de fallo.
 
 		Args:
 				datos: Matriz numpy con los datos de entrenamiento
@@ -47,7 +47,7 @@ class Clasificador:
 			if datos[i][-1] != pred[i]:
 				errores += 1
 
-		return (errores/datos.shape[0])*100
+		return (errores/datos.shape[0])
 
 
 	def validacion(self, particionado, dataset, clasificador, seed=None):
@@ -69,8 +69,8 @@ class Clasificador:
 
 			self.entrenamiento(datosTrain, dataset.nominalAtributos, dataset.diccionario)
 			res, resCLP = clasificador.clasifica(datosTest, dataset.nominalAtributos, dataset.diccionario)
-			mediaError += clasificador.error(datosTest, res)/len(datosTest)
-			mediaErrorCLP += clasificador.error(datosTest, resCLP)/len(datosTest)
+			mediaError += clasificador.error(datosTest, res)
+			mediaErrorCLP += clasificador.error(datosTest, resCLP)
 		lenTest = len(particionado.particiones)
 		return mediaError/lenTest, mediaErrorCLP/lenTest
 
@@ -79,7 +79,6 @@ class Clasificador:
 	# y obtenemos el error en la particion de test i
 	# - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
 	# y obtenemos el error en la particion test. Otra opci�n es repetir la validaci�n simple un n�mero especificado de veces, obteniendo en cada una un error. Finalmente se calcular�a la media.
-		pass
 
 	##############################################################################
 
@@ -145,11 +144,12 @@ class ClasificadorNaiveBayes(Clasificador):
 	def clasifica(self, datostest, atributosDiscretos, diccionario):
 		result = np.zeros(datostest.shape[0])
 		resultCLP = np.zeros(datostest.shape[0])
+		num_clases = len(list(list(diccionario.values())[-1].values()))
 
 		for k, row in enumerate(datostest):
 			decision = (-1, -1) # [0]: Indice clase con mayor probabilidad; [1] Probabilidad
 			decisionCLP = (-1, -1)
-			for i, _ in enumerate(list(list(diccionario.values())[-1].values())): # Por cada clase
+			for i in range(num_clases): # Por cada clase
 				# Multiplicamos la probabilidad de la clase por las condicionales
 				prob = self.pClases[i]
 				probCLP = prob
@@ -250,14 +250,11 @@ class ClasificadorNaiveBayes(Clasificador):
 			freqs[atrValue] = self.pCondicionales[classIndex][atrIndex][atrValue]
 			self.pCondicionales[classIndex][atrIndex][atrValue] /= self.freq[classIndex]
 
-		# En caso de que haya un valor a 0 en las frecuencias, aplicamos la corrección de laplace
-		if 0 in self.pCondicionales[classIndex][atrIndex]:
-			for i in range(uniqueInCol):
-				# Para calcular la correción de laplace añadimos 1
-				self.pCondicionalesCLP[classIndex][atrIndex][i] = freqs[i] + 1
-				self.pCondicionalesCLP[classIndex][atrIndex][i] /= (self.freq[classIndex] + len(self.pCondicionalesCLP[classIndex][atrIndex]))
-		else:
-			self.pCondicionalesCLP[classIndex][atrIndex] = np.copy(self.pCondicionales[classIndex][atrIndex])
+		# Aplicamos la corrección de laplace
+		for i in range(uniqueInCol):
+			# Para calcular la correción de laplace añadimos 1
+			self.pCondicionalesCLP[classIndex][atrIndex][i] = freqs[i] + 1
+			self.pCondicionalesCLP[classIndex][atrIndex][i] /= (self.freq[classIndex] + uniqueInCol)
 
 
 	def calculaPCondicionalContinua(self, atrIndex, classIndex, datostrain):
