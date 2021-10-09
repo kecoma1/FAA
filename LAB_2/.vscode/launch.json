@@ -8,7 +8,7 @@
 			"name": "Python: Archivo actual",
 			"type": "python",
 			"request": "launch",
-			"program": "a.py",
+			"program": "utils.py",
 			"console": "integratedTerminal"
 		}
 	]
