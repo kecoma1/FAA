@@ -1,3 +1,4 @@
+from numpy.lib.function_base import median
 from Clasificador import ClasificadorNaiveBayes
 from Datos import Datos
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
@@ -89,7 +90,7 @@ def test_VS2(X, y, times, testSize, model):
         model.fit(X, y)
         yPred = model.predict(XTest)
         errores[i] = error(yTest, yPred)
-    return 1-np.mean(errores), np.std(errores)
+    return np.mean(errores), np.std(errores)
 
 
 def multinomial_test(german, ttt):
@@ -166,14 +167,14 @@ def gaussian_test(german, ttt):
             tttScore = cross_val_score(gnb, tttX, ttty, cv=int(100/i))
             germanScore = cross_val_score(gnb, germanX, germany, cv=int(100/i))
             
-            GNBerrorMedioGermanVC.append(1-germanScore.mean())
             GNBerrorMediotttVC.append(1-tttScore.mean())
+            GNBerrorMedioGermanVC.append(1-germanScore.mean())
             
             print(f"Test {i}% / K = {int(100/i)}\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
             print(f"Validacion cruzada\t\t{1-germanScore.mean():2f}\t{germanScore.std():2f}\t{1-tttScore.mean():2f}\t\t{tttScore.std():2f}")
         else:
             print(f"Test {i}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
-        print(f"Validacion simple\t\t{1-germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}\n")
+        print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}\n")
     return GNBerrorMedioGermanVS, GNBerrorMedioGermanVC, GNBerrorMediotttVS, GNBerrorMediotttVC
 
 
@@ -208,22 +209,104 @@ def categorical_test(german, ttt):
         
         tttScore = cross_val_score(cnb, tttX, ttty, cv=int(100/i))
         tttScoreCLP = cross_val_score(cnbCLP, tttX, ttty, cv=int(100/i))
-        print(f"Validacion simple\t\t{1-germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}")
-        print(f"Validacion simple (Laplace)\t{1-germanScoreVSCLP[0]:2f}\t{germanScoreVSCLP[1]:2f}\t{tttScoreVSCLP[0]:2f}\t\t{tttScoreVSCLP[1]:2f}\n\n")
+        print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}")
+        print(f"Validacion simple (Laplace)\t{germanScoreVSCLP[0]:2f}\t{germanScoreVSCLP[1]:2f}\t{tttScoreVSCLP[0]:2f}\t\t{tttScoreVSCLP[1]:2f}\n\n")
 
     return CNBerrorMedioGermanVS, CNBerrorMedioGermanVSCLP, CNBerrorMediotttVS, CNBerrorMediotttVSCLP
 
-def plot_CLP_MNB(data, titulos):
+
+def plot(data, titulos):
     VSRange = [i for i in range(5,55,5)]
     VCRange = [20, 10, 6, 5, 4, 3, 2]
 
     plt.figure(figsize=(15,15))
     for i, tupla in enumerate(data):
         plt.subplot(3, 2, i+1)
-        X = VSRange if i % 2 == 0 else VCRange
+        X = VSRange if "simple" in titulos[i] else VCRange
         plt.plot(X, tupla[0], label='Sin correccion de laplace')
         plt.plot(X, tupla[1], label='Correción de laplace')
-        plt.xlabel("% para el test")
+        XLabel = "% para el test" if "simple" in titulos[i] else "K"
+        plt.xlabel(XLabel)
         plt.ylabel("Error")
         plt.title(titulos[i])
         plt.legend()
+
+
+def plot_gaussian(data, titulos):
+    VSRange = [i for i in range(5,55,5)]
+    VCRange = [20, 10, 6, 5, 4, 3, 2]
+
+    plt.figure(figsize=(15,15))
+    for i, d in enumerate(data):
+        plt.subplot(3, 2, i+1)
+        X = VSRange if len(VSRange) == len(d) else VCRange
+        plt.plot(X, d)
+        XLabel = "% para el test" if "simple" in titulos[i] else "K"
+        plt.xlabel(XLabel)
+        plt.ylabel("Error")
+        plt.title(titulos[i])
+
+
+def plot_histograms(data, titulos):
+    plt.figure(figsize=(10,10))
+    medias = []
+    for i, tupla in enumerate(data):
+        media = 0
+        for d in tupla:
+            media += np.mean(d)
+        media /= len(tupla)
+        medias.append(media)
+    plt.bar(titulos, medias)
+    plt.ylabel("Error")
+
+
+def onehot_multinomial_test(german, ttt):
+	tttX = ttt[:,[i for i in range(ttt.shape[1]-1)]]
+	ttty = ttt[:,-1]
+	germanX = german[:,[i for i in range(german.shape[1]-1)]]
+	germany = german[:,-1]
+
+	MNBerrorMedioGermanVS = []
+	MNBerrorMedioGermanVSCLP = []
+	MNBerrorMedioGermanVC = []
+	MNBerrorMedioGermanVCCLP = []
+	MNBerrorMediotttVS = []
+	MNBerrorMediotttVSCLP = []
+	MNBerrorMediotttVC = []
+	MNBerrorMediotttVCCLP = []
+
+	for i in range(5, 55, 5):
+		mnb = MultinomialNB(fit_prior=True)
+		mnbCLP = MultinomialNB(fit_prior=True, alpha=1)
+		
+		tttScoreVS = test_VS(tttX, ttty, 10, i/100, mnb)
+		tttScoreVSCLP = test_VS(tttX, ttty, 10, i/100, mnbCLP)
+		germanScoreVS = test_VS(germanX, germany, 10, i/100, mnb)
+		germanScoreVSCLP = test_VS(germanX, germany, 10, i/100, mnbCLP)
+
+		MNBerrorMedioGermanVS.append(germanScoreVS[0])
+		MNBerrorMedioGermanVSCLP.append(germanScoreVSCLP[0])
+		MNBerrorMediotttVS.append(tttScoreVS[0])
+		MNBerrorMediotttVSCLP.append(tttScoreVSCLP[0])
+		
+		if i < 40:
+			tttScore = cross_val_score(mnb, tttX, ttty, cv=int(100/i))
+			tttScoreCLP = cross_val_score(mnbCLP, tttX, ttty, cv=int(100/i))
+			germanScore = cross_val_score(mnb, germanX, germany, cv=int(100/i))
+			germanScoreCLP = cross_val_score(mnbCLP, germanX, germany, cv=int(100/i))
+			
+			MNBerrorMedioGermanVC.append(1-germanScore.mean())
+			MNBerrorMedioGermanVCCLP.append(1-germanScoreCLP.mean())
+			MNBerrorMediotttVC.append(1-tttScore.mean())
+			MNBerrorMediotttVCCLP.append(1-tttScoreCLP.mean())
+			
+			print(f"Test {i}% / K = {int(100/i)}\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+			print(f"Validacion cruzada\t\t{1-germanScore.mean():2f}\t{germanScore.std():2f}\t{1-tttScore.mean():2f}\t\t{tttScore.std():2f}")
+			print(f"Validacion cruzada (Laplace)\t{1-germanScoreCLP.mean():2f}\t{germanScoreCLP.std():2f}\t{1-tttScoreCLP.mean():2f}\t\t{tttScoreCLP.std():2f}")
+		else:
+			print(f"Test {i}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+		print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}")
+		print(f"Validacion simple (Laplace)\t{germanScoreVSCLP[0]:2f}\t{germanScoreVSCLP[1]:2f}\t{tttScoreVSCLP[0]:2f}\t\t{tttScoreVSCLP[1]:2f}\n\n")
+	return MNBerrorMedioGermanVS, MNBerrorMedioGermanVSCLP, MNBerrorMedioGermanVC, MNBerrorMedioGermanVCCLP, MNBerrorMediotttVS, MNBerrorMediotttVSCLP, MNBerrorMediotttVC, MNBerrorMediotttVCCLP
+
+
