@@ -11,10 +11,26 @@ class ClasificadorKNN(Clasificador):
 		self.K = K
 
 	def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
-		pass
+		# Normalizamos los datos
+		datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos)
+
+		# Calculamos la probabilidad de las clases
+		self.calculaPClases(datostrain)
 
 	def clasifica(self, datostest, atributosDiscretos, diccionario):
 		pass
+
+	def calculaPClases(self, datostrain):
+		"""Método para calcular la probabilidad de las clases (frecuencia).
+
+		Args:
+			datostrain (Matriz Numpy): Datos a comprobar.
+		"""
+		# Obtenemos la frecuencia de los valores en las columnas
+		_, self.freqs = np.unique(datostrain[:,-1], return_counts=True)
+		self.N = sum(self.freq)
+		self.pClases = np.array([i/self.N for i in self.freqs])
+
 
 	def calcularMediasDesv(self, datos, nominalAtributos):
 		"""Función para calcular las medias y las desviaciones típicas.
