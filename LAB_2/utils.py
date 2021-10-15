@@ -1,3 +1,4 @@
+from numpy.lib.function_base import median
 from Clasificador import ClasificadorNaiveBayes
 from Datos import Datos
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
@@ -24,23 +25,43 @@ def test(times: int, testPercentage: int, cruzada: bool, data):
     return np.mean(error), np.mean(errorCLP), np.std(error), np.std(errorCLP)
 
 
-def testPrint(times: int, testPercentage: int, german, ttt):
-    mediaTTTVS, mediaTTTCLPVS, stdTTTVS, stdTTTCLPVS = test(
-        times, testPercentage, False, ttt)
-    mediaGermanVS, mediaGermanCLPVS, stdGermanVS, stdGermanCLPVS = test(
-        times, testPercentage, False, german)
-    if testPercentage < 40:
-        mediaGermanVC, mediaGermanCLPVC, stdGermanVC, stdGermanCLPVC = test(
-            times, testPercentage, True, german)
-        mediaTTTVC, mediaTTTCLPVC, stdTTTVC, stdTTTCLPVC = test(
-            times, testPercentage, True, ttt)
-        print(f"Test {testPercentage}% / K = {int(100/testPercentage)}\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
-        print(f"Validacion cruzada\t\t{mediaGermanVC:2f}\t{stdGermanVC:2f}\t{mediaTTTVC:2f}\t\t{stdTTTVC:2f}")
-        print(f"Validacion cruzada (Laplace)\t{mediaGermanCLPVC:2f}\t{stdGermanCLPVC:2f}\t{mediaTTTCLPVC:2f}\t\t{stdTTTCLPVC:2f}")
-    else:
-        print(f"Test {testPercentage}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
-    print(f"Validacion simple\t\t{mediaGermanVS:2f}\t{stdGermanVS:2f}\t{mediaTTTVS:2f}\t\t{stdTTTVS:2f}")
-    print(f"Validacion simple (Laplace)\t{mediaGermanCLPVS:2f}\t{stdGermanCLPVS:2f}\t{mediaTTTCLPVS:2f}\t\t{stdTTTCLPVS:2f}\n\n")
+def propio_test(german, ttt):
+    propioErrorMedioGermanVS = []
+    propioErrorMedioGermanVSCLP = []
+    propioErrorMedioGermanVC = []
+    propioErrorMedioGermanVCCLP = []
+    propioErrorMediotttVS = []
+    propioErrorMediotttVSCLP = []
+    propioErrorMediotttVC = []
+    propioErrorMediotttVCCLP = []
+    
+    for i in range(5, 55, 5):
+        mediaTTTVS, mediaTTTCLPVS, stdTTTVS, stdTTTCLPVS = test(10, i, False, ttt)
+        mediaGermanVS, mediaGermanCLPVS, stdGermanVS, stdGermanCLPVS = test(10, i, False, german)
+        
+        propioErrorMedioGermanVS.append(mediaGermanVS)
+        propioErrorMedioGermanVSCLP.append(mediaGermanCLPVS)
+        propioErrorMediotttVS.append(mediaTTTVS)
+        propioErrorMediotttVSCLP.append(mediaTTTCLPVS)
+    
+        if i < 40:
+            mediaTTTVC, mediaTTTCLPVC, stdTTTVC, stdTTTCLPVC = test(10, int(100/i), True, ttt)
+            mediaGermanVC, mediaGermanCLPVC, stdGermanVC, stdGermanCLPVC = test(10, int(100/i), True, german)
+
+            propioErrorMedioGermanVC.append(mediaGermanVC)
+            propioErrorMedioGermanVCCLP.append(mediaGermanCLPVC)
+            propioErrorMediotttVC.append(mediaTTTVC)
+            propioErrorMediotttVCCLP.append(mediaTTTCLPVC)
+            
+            print(f"Test {i}% / K = {int(100/i)}\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+            print(f"Validacion cruzada\t\t{mediaGermanVC:2f}\t{stdGermanVC:2f}\t{mediaTTTVC:2f}\t\t{stdTTTVC:2f}")
+            print(f"Validacion cruzada (Laplace)\t{mediaGermanCLPVC:2f}\t{stdGermanCLPVC:2f}\t{mediaTTTCLPVC:2f}\t\t{stdTTTCLPVC:2f}")
+        else:
+            print(f"Test {i}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+        print(f"Validacion simple\t\t{mediaGermanVS:2f}\t{stdGermanVS:2f}\t{mediaTTTVS:2f}\t\t{stdTTTVS:2f}")
+        print(f"Validacion simple (Laplace)\t{mediaGermanCLPVS:2f}\t{stdGermanCLPVS:2f}\t{mediaTTTCLPVS:2f}\t\t{stdTTTCLPVS:2f}\n\n")
+
+    return propioErrorMedioGermanVS, propioErrorMedioGermanVSCLP, propioErrorMedioGermanVC, propioErrorMedioGermanVCCLP, propioErrorMediotttVS, propioErrorMediotttVSCLP, propioErrorMediotttVC, propioErrorMediotttVCCLP
 
 
 def error(datos, pred):
@@ -69,7 +90,7 @@ def test_VS2(X, y, times, testSize, model):
         model.fit(X, y)
         yPred = model.predict(XTest)
         errores[i] = error(yTest, yPred)
-    return 1-np.mean(errores), np.std(errores)
+    return np.mean(errores), np.std(errores)
 
 
 def multinomial_test(german, ttt):
@@ -120,3 +141,172 @@ def multinomial_test(german, ttt):
 		print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}")
 		print(f"Validacion simple (Laplace)\t{germanScoreVSCLP[0]:2f}\t{germanScoreVSCLP[1]:2f}\t{tttScoreVSCLP[0]:2f}\t\t{tttScoreVSCLP[1]:2f}\n\n")
 	return MNBerrorMedioGermanVS, MNBerrorMedioGermanVSCLP, MNBerrorMedioGermanVC, MNBerrorMedioGermanVCCLP, MNBerrorMediotttVS, MNBerrorMediotttVSCLP, MNBerrorMediotttVC, MNBerrorMediotttVCCLP
+
+
+def gaussian_test(german, ttt):
+    tttX = ttt.datos[:,[i for i in range(ttt.datos.shape[1]-1)]]
+    ttty = ttt.datos[:,-1]
+    germanX = german.datos[:,[i for i in range(german.datos.shape[1]-1)]]
+    germany = german.datos[:,-1]
+    
+    GNBerrorMedioGermanVS = []
+    GNBerrorMedioGermanVC = []
+    GNBerrorMediotttVS = []
+    GNBerrorMediotttVC = []
+
+    for i in range(5, 55, 5):
+        gnb = GaussianNB()
+        
+        tttScoreVS = test_VS(tttX, ttty, 10, i/100, gnb)
+        germanScoreVS = test_VS(germanX, germany, 10, i/100, gnb)
+        
+        GNBerrorMedioGermanVS.append(germanScoreVS[0])
+        GNBerrorMediotttVS.append(tttScoreVS[0])
+        
+        if i < 40:
+            tttScore = cross_val_score(gnb, tttX, ttty, cv=int(100/i))
+            germanScore = cross_val_score(gnb, germanX, germany, cv=int(100/i))
+            
+            GNBerrorMediotttVC.append(1-tttScore.mean())
+            GNBerrorMedioGermanVC.append(1-germanScore.mean())
+            
+            print(f"Test {i}% / K = {int(100/i)}\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+            print(f"Validacion cruzada\t\t{1-germanScore.mean():2f}\t{germanScore.std():2f}\t{1-tttScore.mean():2f}\t\t{tttScore.std():2f}")
+        else:
+            print(f"Test {i}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+        print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}\n")
+    return GNBerrorMedioGermanVS, GNBerrorMedioGermanVC, GNBerrorMediotttVS, GNBerrorMediotttVC
+
+
+def categorical_test(german, ttt):
+    tttX = ttt.datos[:,[i for i in range(ttt.datos.shape[1]-1)]]
+    ttty = ttt.datos[:,-1]
+    germanX = german.datos[:,[i for i in range(german.datos.shape[1]-1)]]
+    germany = german.datos[:,-1]
+
+    CNBerrorMedioGermanVS = []
+    CNBerrorMedioGermanVSCLP = []
+    CNBerrorMediotttVS = []
+    CNBerrorMediotttVSCLP = []
+
+    for i in range(5, 55, 5):
+        cnb = CategoricalNB(fit_prior=True)
+        cnbCLP = CategoricalNB(fit_prior=True, alpha=1)
+        
+        tttScoreVS = test_VS2(tttX, ttty, 10, i/100, cnb)
+        tttScoreVSCLP = test_VS2(tttX, ttty, 10, i/100, cnbCLP)
+        germanScoreVS = test_VS2(germanX, germany, 10, i/100, cnb)
+        germanScoreVSCLP = test_VS2(germanX, germany, 10, i/100, cnbCLP)
+        #germanScore = cross_val_score(cnb, germanX, germany, cv=int(100/i))
+        #germanScoreCLP = cross_val_score(cnbCLP, germanX, germany, cv=int(100/i))
+        
+        CNBerrorMedioGermanVS.append(germanScoreVS[0])
+        CNBerrorMedioGermanVSCLP.append(germanScoreVSCLP[0])
+        CNBerrorMediotttVS.append(tttScoreVS[0])
+        CNBerrorMediotttVSCLP.append(tttScoreVSCLP[0])
+
+        print(f"Test {i}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+        
+        tttScore = cross_val_score(cnb, tttX, ttty, cv=int(100/i))
+        tttScoreCLP = cross_val_score(cnbCLP, tttX, ttty, cv=int(100/i))
+        print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}")
+        print(f"Validacion simple (Laplace)\t{germanScoreVSCLP[0]:2f}\t{germanScoreVSCLP[1]:2f}\t{tttScoreVSCLP[0]:2f}\t\t{tttScoreVSCLP[1]:2f}\n\n")
+
+    return CNBerrorMedioGermanVS, CNBerrorMedioGermanVSCLP, CNBerrorMediotttVS, CNBerrorMediotttVSCLP
+
+
+def plot(data, titulos):
+    VSRange = [i for i in range(5,55,5)]
+    VCRange = [20, 10, 6, 5, 4, 3, 2]
+
+    plt.figure(figsize=(15,15))
+    for i, tupla in enumerate(data):
+        plt.subplot(3, 2, i+1)
+        X = VSRange if "simple" in titulos[i] else VCRange
+        plt.plot(X, tupla[0], label='Sin correccion de laplace')
+        plt.plot(X, tupla[1], label='Correción de laplace')
+        XLabel = "% para el test" if "simple" in titulos[i] else "K"
+        plt.xlabel(XLabel)
+        plt.ylabel("Error")
+        plt.title(titulos[i])
+        plt.legend()
+
+
+def plot_gaussian(data, titulos):
+    VSRange = [i for i in range(5,55,5)]
+    VCRange = [20, 10, 6, 5, 4, 3, 2]
+
+    plt.figure(figsize=(15,15))
+    for i, d in enumerate(data):
+        plt.subplot(3, 2, i+1)
+        X = VSRange if len(VSRange) == len(d) else VCRange
+        plt.plot(X, d)
+        XLabel = "% para el test" if "simple" in titulos[i] else "K"
+        plt.xlabel(XLabel)
+        plt.ylabel("Error")
+        plt.title(titulos[i])
+
+
+def plot_histograms(data, titulos):
+    plt.figure(figsize=(10,10))
+    medias = []
+    for i, tupla in enumerate(data):
+        media = 0
+        for d in tupla:
+            media += np.mean(d)
+        media /= len(tupla)
+        medias.append(media)
+    plt.bar(titulos, medias)
+    plt.ylabel("Error")
+
+
+def onehot_multinomial_test(german, ttt):
+	tttX = ttt[:,[i for i in range(ttt.shape[1]-1)]]
+	ttty = ttt[:,-1]
+	germanX = german[:,[i for i in range(german.shape[1]-1)]]
+	germany = german[:,-1]
+
+	MNBerrorMedioGermanVS = []
+	MNBerrorMedioGermanVSCLP = []
+	MNBerrorMedioGermanVC = []
+	MNBerrorMedioGermanVCCLP = []
+	MNBerrorMediotttVS = []
+	MNBerrorMediotttVSCLP = []
+	MNBerrorMediotttVC = []
+	MNBerrorMediotttVCCLP = []
+
+	for i in range(5, 55, 5):
+		mnb = MultinomialNB(fit_prior=True)
+		mnbCLP = MultinomialNB(fit_prior=True, alpha=1)
+		
+		tttScoreVS = test_VS(tttX, ttty, 10, i/100, mnb)
+		tttScoreVSCLP = test_VS(tttX, ttty, 10, i/100, mnbCLP)
+		germanScoreVS = test_VS(germanX, germany, 10, i/100, mnb)
+		germanScoreVSCLP = test_VS(germanX, germany, 10, i/100, mnbCLP)
+
+		MNBerrorMedioGermanVS.append(germanScoreVS[0])
+		MNBerrorMedioGermanVSCLP.append(germanScoreVSCLP[0])
+		MNBerrorMediotttVS.append(tttScoreVS[0])
+		MNBerrorMediotttVSCLP.append(tttScoreVSCLP[0])
+		
+		if i < 40:
+			tttScore = cross_val_score(mnb, tttX, ttty, cv=int(100/i))
+			tttScoreCLP = cross_val_score(mnbCLP, tttX, ttty, cv=int(100/i))
+			germanScore = cross_val_score(mnb, germanX, germany, cv=int(100/i))
+			germanScoreCLP = cross_val_score(mnbCLP, germanX, germany, cv=int(100/i))
+			
+			MNBerrorMedioGermanVC.append(1-germanScore.mean())
+			MNBerrorMedioGermanVCCLP.append(1-germanScoreCLP.mean())
+			MNBerrorMediotttVC.append(1-tttScore.mean())
+			MNBerrorMediotttVCCLP.append(1-tttScoreCLP.mean())
+			
+			print(f"Test {i}% / K = {int(100/i)}\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+			print(f"Validacion cruzada\t\t{1-germanScore.mean():2f}\t{germanScore.std():2f}\t{1-tttScore.mean():2f}\t\t{tttScore.std():2f}")
+			print(f"Validacion cruzada (Laplace)\t{1-germanScoreCLP.mean():2f}\t{germanScoreCLP.std():2f}\t{1-tttScoreCLP.mean():2f}\t\t{tttScoreCLP.std():2f}")
+		else:
+			print(f"Test {i}%\t\t\tGerman - Media\tGerman - std\tTic-Tac-Toe - Media\tTic-Tac-Toe - std")
+		print(f"Validacion simple\t\t{germanScoreVS[0]:2f}\t{germanScoreVS[1]:2f}\t{tttScoreVS[0]:2f}\t\t{tttScoreVS[1]:2f}")
+		print(f"Validacion simple (Laplace)\t{germanScoreVSCLP[0]:2f}\t{germanScoreVSCLP[1]:2f}\t{tttScoreVSCLP[0]:2f}\t\t{tttScoreVSCLP[1]:2f}\n\n")
+	return MNBerrorMedioGermanVS, MNBerrorMedioGermanVSCLP, MNBerrorMedioGermanVC, MNBerrorMedioGermanVCCLP, MNBerrorMediotttVS, MNBerrorMediotttVSCLP, MNBerrorMediotttVC, MNBerrorMediotttVCCLP
+
+
