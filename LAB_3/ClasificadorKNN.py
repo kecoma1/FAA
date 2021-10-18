@@ -108,7 +108,7 @@ class ClasificadorKNN(Clasificador):
 				clases[c] = 1
 			else:
 				clases[c] += 1
-		return sorted(clases.items(), key=lambda x: x[1])[0][0]
+		return sorted(clases.items(), key=lambda x: x[1], reverse=True)[0][0]
 
 	def distanciaEuclidea(self, x, y, w=None):
 		"""Función privada para calcular la distancia euclidea
