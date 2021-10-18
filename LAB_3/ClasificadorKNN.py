@@ -99,9 +99,18 @@ class ClasificadorKNN(Clasificador):
 			float: Clase
 		"""
 		distanciasOrdenadas = sorted(distancias, key=lambda x: x[0])
-		return  self.getClaseMasFrequente(distanciasOrdenadas[:self.K])
+		return  self.getClaseMasFrecuente(distanciasOrdenadas[:self.K])
 
-	def getClaseMasFrequente(self, distancias):
+	def getClaseMasFrecuente(self, distancias):
+		"""Función que dadas unas distancias devuelve la
+		clase más frecuente.
+
+		Args:
+			distancias (list): Lista de tuplas que contiene (distancia, clase)
+
+		Returns:
+			float: Clase
+		"""
 		clases = {}
 		for _, c in distancias:
 			if c not in clases:
