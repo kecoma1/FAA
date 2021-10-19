@@ -68,7 +68,8 @@ class Clasificador:
 			self.entrenamiento(datosTrain, dataset.nominalAtributos, dataset.diccionario)
 			res, resCLP = clasificador.clasifica(datosTest, dataset.nominalAtributos, dataset.diccionario)
 			mediaError += clasificador.error(datosTest, res)
-			mediaErrorCLP += clasificador.error(datosTest, resCLP)
+			if len(resCLP) != 0:
+				mediaErrorCLP += clasificador.error(datosTest, resCLP)
 		lenTest = len(particionado.particiones)
 		return mediaError/lenTest, mediaErrorCLP/lenTest
 

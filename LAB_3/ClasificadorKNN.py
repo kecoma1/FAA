@@ -22,7 +22,7 @@ class ClasificadorKNN(Clasificador):
 		testNormalizados = self.normalizarDatos(datostest, atributosDiscretos)
 		for rowTest in testNormalizados: # Por cada fila en el test
 			prediccionesClases.append(self.clasificaFila(rowTest))
-		return prediccionesClases
+		return prediccionesClases, []
 
 	def calculaPClases(self, datostrain):
 		"""Método para calcular la probabilidad de las clases (frecuencia).
