@@ -1,6 +1,7 @@
 from numpy.core.fromnumeric import shape
 from Clasificador import Clasificador
 from scipy.stats import norm
+from KMeans import distanciaEuclidea
 import numpy as np
 import math
 
@@ -85,7 +86,7 @@ class ClasificadorKNN(Clasificador):
 		distancias = [] # Lista con tuplas. [(distancia, clase), ...]
 		# Calculamos las distancias
 		for rowData in self.datosNormalizados:
-			distancias.append((self.distanciaEuclidea(fila, rowData), rowData[-1]))
+			distancias.append((distanciaEuclidea(fila, rowData), rowData[-1]))
 
 		return self.getClaseKVecinos(distancias)
 
@@ -106,10 +107,10 @@ class ClasificadorKNN(Clasificador):
 		clase más frecuente.
 
 		Args:
-			distancias (list): Lista de tuplas que contiene (distancia, clase)
+			distancias (list): Lista de tuplas que contiene (distancia, clase).
 
 		Returns:
-			float: Clase
+			float: Clase.
 		"""
 		clases = {}
 		for _, c in distancias:
@@ -117,49 +118,8 @@ class ClasificadorKNN(Clasificador):
 				clases[c] = 1
 			else:
 				clases[c] += 1
-		return sorted(clases.items(), key=lambda x: x[1], reverse=True)[0][0]
+		# Devolvemos la calse con mayor frecuencia en K
+		return max(clases.items(), key=lambda x: x[1])
 
-	def distanciaEuclidea(self, x, y, w=None):
-		"""Función privada para calcular la distancia euclidea
-		entre 2 vectores. También se calcula la distancia euclidea
-		ponderada en caso de que se pasen las ponderaciones.
 
-		Args:
-			x (numpy.array): Vector.
-			y (numpy.array): Vector.
-			w (numpy.array): Vector con las ponderaciones.
-
-		Returns:
-			float: Distancia euclidea
-		"""
-		if w is None:
-			return sum([(xi-yi)**2 for xi, yi in zip(x, y)])**(1/2)
-		else:
-			return sum([((xi-yi)*wi)**2 for xi, yi, wi in zip(x, y, w)])**(1/2)
-
-	def distanciaManhattan(self, x, y):
-		"""Función privada para calcular la distancia manhattan
-		entre 2 vectores.
-
-		Args:
-			x (numpy.array): Vector.
-			y (numpy.array): Vector.
-
-		Returns:
-			float: Distancia euclidea ponderada
-		"""
-		return [math.abs(xi-yi) for xi, yi in zip(x, y)]
-
-	def distanciaChevychev(self, x, y):
-		"""Función privada para calcular la distancia manhattan
-		entre 2 vectores.
-
-		Args:
-			x (numpy.array): Vector.
-			y (numpy.array): Vector.
-
-		Returns:
-			float: Distancia euclidea ponderada
-		"""
-		return [math.abs(xi-yi)**2 for xi, yi in zip(x, y)]
 
