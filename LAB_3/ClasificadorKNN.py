@@ -119,7 +119,7 @@ class ClasificadorKNN(Clasificador):
 			else:
 				clases[c] += 1
 		# Devolvemos la calse con mayor frecuencia en K
-		return max(clases.items(), key=lambda x: x[1])
+		return max(clases.items(), key=lambda x: x[1])[0]
 
 
 

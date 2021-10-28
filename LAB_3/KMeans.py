@@ -70,8 +70,33 @@ def eligeCentroides(k, longitudDatos):
 	return randoms
 
 
+def comparaCentroides(l1, l2):
+	"""Función que compara centroides.
+
+	Args:
+		l1 (list): Lista con centroides.
+		l2 (list): Lista con centroides.
+
+	Returns:
+		bool
+	"""
+	for c1, c2 in zip(l1, l2):
+		for i1, i2 in zip(c1[0], c2[0]):
+			if i1 != i2:
+				return False
+	return True
+
+
 def centroDeMasas(puntosCluster):
-	
+	"""Función para calcular el centro
+	de masas dados varios puntos en un cluster.
+
+	Args:
+		puntosCluster (list): Lista con los puntos del cluster.
+
+	Returns:
+		numpy.array: Array con los valores del centro de masas.
+	"""
 	centro = np.zeros(puntosCluster.shape[1])
 	for i, col in enumerate(puntosCluster.transpose()):
 		centro[i] = sum(col)/len(col)
@@ -98,28 +123,24 @@ def kMeans(k, datos):
 	centroides = [(datos[centroide], cluster) for cluster, centroide in enumerate(eligeCentroides(k, len(datos)))]
 
 	# Centroides anteriores, se usa esta variable para salir del bucle 
-	prevCentroides = []
+	prevCentroides = [(np.zeros(len(datos[0])), None) for _ in range(k)]
 
-	# Lista con los clusters a crear. La lista contiene los índices de cada
-	# cluster y una lista en la que se meten los indices asignados a dicho cluster.
-	clusters = {cluster: [] for _, cluster in centroides}
+	while not comparaCentroides(prevCentroides, centroides):
+		# Lista con los clusters a crear. La lista contiene los índices de cada
+		# cluster y una lista en la que se meten los indices asignados a dicho cluster.
+		clusters = {cluster: [] for _, cluster in centroides}
 
-	while prevCentroides != centroides:
 		for indiceDato, dato in enumerate(datos):
 			# Para cada fila de los datos calculamos la distancia con cada centroide
 			distanciasCentroides = [(distanciaEuclidea(dato, datosCentroide), cluster) for datosCentroide, cluster in centroides]
 			
-			# Ordenamos las distancias y obtenemos el cluster (centroide)
-			# más cercano.
+			# Ordenamos las distancias y obtenemos el cluster (centroide) más cercano.
 			cluster = sorted(distanciasCentroides, key=lambda x: x[0])[0][1]
 			clusters[cluster].append(indiceDato)
 
 		# Recalculamos los centroides y reiniciamos los clusters
 		prevCentroides = centroides
 		centroides = calculaCentroides(clusters, datos)
-		clusters = {centroide: [] for _, centroide in centroides}
 
 	return clusters
 
-datos = Datos("ConjuntosDatos/lentillas.data")
-print(kMeans(5, datos.datos))
