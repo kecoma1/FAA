@@ -5,7 +5,7 @@ from Datos import Datos
 
 
 def distanciaEuclidea(x, y, w=None):
-	"""Función privada para calcular la distancia euclidea
+	"""Función para calcular la distancia euclidea
 	entre 2 vectores. También se calcula la distancia euclidea
 	ponderada en caso de que se pasen las ponderaciones.
 
@@ -24,7 +24,7 @@ def distanciaEuclidea(x, y, w=None):
 
 
 def distanciaManhattan(x, y):
-	"""Función privada para calcular la distancia manhattan
+	"""Función para calcular la distancia manhattan
 	entre 2 vectores.
 
 	Args:
@@ -32,13 +32,13 @@ def distanciaManhattan(x, y):
 		y (numpy.array): Vector.
 
 	Returns:
-		float: Distancia euclidea ponderada
+		float: Distancia Manhattan
 	"""
 	return [math.abs(xi-yi) for xi, yi in zip(x, y)]
 
 
 def distanciaChevychev(x, y):
-	"""Función privada para calcular la distancia manhattan
+	"""Función para calcular la distancia manhattan
 	entre 2 vectores.
 
 	Args:
@@ -46,7 +46,7 @@ def distanciaChevychev(x, y):
 		y (numpy.array): Vector.
 
 	Returns:
-		float: Distancia euclidea ponderada
+		float: Distancia Chevychev
 	"""
 	return [math.abs(xi-yi)**2 for xi, yi in zip(x, y)]
 
@@ -88,8 +88,11 @@ def comparaCentroides(l1, l2):
 
 
 def centroDeMasas(puntosCluster):
-	"""Función para calcular el centro
-	de masas dados varios puntos en un cluster.
+	"""Función para calcular el centro de masas dados varios puntos en un cluster.
+	***Si hay columnas nominales el centro de masas se calcula de la misma
+	forma que con las columnas que no son nominales.
+	Por ejemplo, si tenemos una columna nominal con los valores AZUL = 0 y ROJO = 1,
+	es posible obtener el valor 0.5 en  el centro de masas aunque este valor no exista.
 
 	Args:
 		puntosCluster (list): Lista con los puntos del cluster.
@@ -118,8 +121,17 @@ def calculaCentroides(clusters, datos):
 
 
 def kMeans(k, datos):
-	# Lista con tuplas las cuales contienen:
-	# (Centroide, índice centroide en los datos)
+	"""Función que calcula las K medias dado un dataset.
+	Se asume que los datos que se envían no tienen incluida la columna "class"
+
+	Args:
+		k (int): Clusters a crear
+		datos (numpy.array): Matriz numpy con los datos.
+
+	Returns:
+		list: Lista con los clusters.
+	"""
+	# Lista con tuplas las cuales contienen: (Centroide, índice centroide en los datos)
 	centroides = [(datos[centroide], cluster) for cluster, centroide in enumerate(eligeCentroides(k, len(datos)))]
 
 	# Centroides anteriores, se usa esta variable para salir del bucle 
@@ -144,3 +156,10 @@ def kMeans(k, datos):
 
 	return clusters
 
+
+def error(k, clusters, datos):
+	clases = np.unique(datos[:,-1])
+	for cluster in clusters.values():
+		frecuenciaClases = np.zeros(len(clases))
+		for value in cluster:
+			frecuenciaClases[datos[value][-1]] += 1
