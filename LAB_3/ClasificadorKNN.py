@@ -7,13 +7,24 @@ import math
 
 
 class ClasificadorKNN(Clasificador):
+	"""Clase donde se define el clasificardor K-NN.
+	Este clasificador solo tiene un atributo, K, el cual es 
+	necesario para la ejecución del algoritmo.
+
+	Al clasificar se clasifica cada fila del test, con todas
+	las filas del dataset. Para hacer esto es necesario guardar el 
+	dataset. Esto se hace al ejecutar el método "entrenamiento",
+	el cuál tiene un argumento opcional "norm" que por defecto está a False.
+	Si se pusiese a True, se normalizarían los datos y se guardarían
+	normalizados.
+	"""
 
 	def __init__(self, K):
 		self.K = K
 
-	def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
+	def entrenamiento(self, datostrain, atributosDiscretos, diccionario, norm=False):
 		# Normalizamos los datos
-		self.datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos)
+		self.datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos) if norm else datostrain
 
 		# Calculamos la probabilidad de las clases
 		self.calculaPClases(self.datosNormalizados)
