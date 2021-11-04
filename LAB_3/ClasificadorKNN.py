@@ -19,12 +19,13 @@ class ClasificadorKNN(Clasificador):
 	normalizados.
 	"""
 
-	def __init__(self, K):
+	def __init__(self, K, norm=True):
 		self.K = K
+		self.norm = norm
 
-	def entrenamiento(self, datostrain, atributosDiscretos, _, norm=True):
+	def entrenamiento(self, datostrain, atributosDiscretos, _):
 		# Normalizamos los datos
-		self.datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos) if norm else datostrain
+		self.datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos) if self.norm else datostrain
 
 		# Calculamos la probabilidad de las clases
 		self.calculaPClases(self.datosNormalizados)
