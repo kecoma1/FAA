@@ -140,3 +140,61 @@ def negativos(datos, clase):
 		if fila[-1] != clase:
 			n += 1
 	return n
+
+
+def exactitud(vp, vn, fp, fn):
+	"""Función para calcular la exactitud dados los valores
+	de la matriz de confusión.
+
+	Args:
+		vp (int): Verdaderos positivos.
+		vn (int): Verdaderos negativos.
+		fp (int): Falsos positivos.
+		fn (int): Falsos positivos.
+
+	Returns:
+		float: Exactitud.
+	"""
+	return (vp+vn)/(vp+fp+fn+vn)
+
+
+def precision(vp, fp):
+	"""Función para calcular la precision dados los valores
+	de la matriz de confusión.
+
+	Args:
+		vp (int): Verdaderos positivos.
+		fp (int): Falsos positivos.
+
+	Returns:
+		float: Precision.
+	"""
+	return vp/(vp+fp)
+
+
+def sensibilidad(vp, fn):
+	"""Función para calcular la sensibilidad dados los valores
+	de la matriz de confusión.
+
+	Args:
+		vp (int): Verdaderos positivos.
+		fn (int): Falsos positivos.
+
+	Returns:
+		float: Sensibilidad.
+	"""
+	return vp/(vp+fn)
+
+
+def especificidad(vn, fp):
+	"""Función para calcular la especificidad dados los valores
+	de la matriz de confusión.
+
+	Args:
+		vn (int): Verdaderos negativos.
+		fp (int): Falsos positivos.
+
+	Returns:
+		float: especificidad.
+	"""
+	return vn/(vn+fp)
