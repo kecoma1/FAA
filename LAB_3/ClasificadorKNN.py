@@ -22,14 +22,14 @@ class ClasificadorKNN(Clasificador):
 	def __init__(self, K):
 		self.K = K
 
-	def entrenamiento(self, datostrain, atributosDiscretos, diccionario, norm=False):
+	def entrenamiento(self, datostrain, atributosDiscretos, _, norm=True):
 		# Normalizamos los datos
 		self.datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos) if norm else datostrain
 
 		# Calculamos la probabilidad de las clases
 		self.calculaPClases(self.datosNormalizados)
 
-	def clasifica(self, datostest, atributosDiscretos, diccionario):
+	def clasifica(self, datostest, atributosDiscretos, _):
 		prediccionesClases = []
 		testNormalizados = self.normalizarDatos(datostest, atributosDiscretos)
 		for rowTest in testNormalizados: # Por cada fila en el test
@@ -131,6 +131,3 @@ class ClasificadorKNN(Clasificador):
 				clases[c] += 1
 		# Devolvemos la calse con mayor frecuencia en K
 		return max(clases.items(), key=lambda x: x[1])[0]
-
-
-
