@@ -120,16 +120,19 @@ def calculaCentroides(clusters, datos):
 	return [(centroDeMasas(datos[cluster]), i) for i, cluster in enumerate(clusters.values())]
 
 
-def kMeans(k, datos):
+def kMeans(k, datos, maxIter=0):
 	"""Función que calcula las K medias dado un dataset.
 	Se asume que los datos que se envían no tienen incluida la columna "class"
 
 	Args:
 		k (int): Clusters a crear
 		datos (numpy.array): Matriz numpy con los datos.
+		maxIter (int): Argumento opcional con el que se establece un número máximo de
+		iteraciones.
 
 	Returns:
-		list: Lista con los clusters.
+		dict: Diccionario con los clusters. La clave se refiere el número del cluster,
+		no tiene nada que ver con la clase.
 	"""
 	# Lista con tuplas las cuales contienen: (Centroide, índice centroide en los datos)
 	centroides = [(datos[centroide], cluster) for cluster, centroide in enumerate(eligeCentroides(k, len(datos)))]
@@ -137,7 +140,13 @@ def kMeans(k, datos):
 	# Centroides anteriores, se usa esta variable para salir del bucle 
 	prevCentroides = [(np.zeros(len(datos[0])), None) for _ in range(k)]
 
-	while not comparaCentroides(prevCentroides, centroides):
+	# Para un número máximo de iteraciones
+	i = 0
+	if maxIter == 0:
+		maxIter = -1	
+		i = -2	
+
+	while not comparaCentroides(prevCentroides, centroides) and i < maxIter:
 		# Lista con los clusters a crear. La lista contiene los índices de cada
 		# cluster y una lista en la que se meten los indices asignados a dicho cluster.
 		clusters = {cluster: [] for _, cluster in centroides}
@@ -147,12 +156,15 @@ def kMeans(k, datos):
 			distanciasCentroides = [(distanciaEuclidea(dato, datosCentroide), cluster) for datosCentroide, cluster in centroides]
 			
 			# Ordenamos las distancias y obtenemos el cluster (centroide) más cercano.
-			cluster = sorted(distanciasCentroides, key=lambda x: x[0])[0][1]
+			cluster = min(distanciasCentroides, key=lambda x: x[0])[1]
 			clusters[cluster].append(indiceDato)
 
 		# Recalculamos los centroides y reiniciamos los clusters
 		prevCentroides = centroides
 		centroides = calculaCentroides(clusters, datos)
+
+		# En el caso de establecer un número máximo de iteraciones
+		i = i+1 if maxIter != -1 else i
 
 	return clusters
 
@@ -165,14 +177,17 @@ def confianzas(clusters, datos):
 		datos (numpy.array): Dataset.
 
 	Returns:
-		list: Lista con todas las confianzas
+		dict: Diccionario con todas las confianzas. La "key" se refiere
+		al cluster (la key dentro del diccionario de clusters), el "value"
+		es una tupla con (confianza, clase mayoritaria)
 	"""
-	confianzas = []
+	confianzas = {}
 	numClases = len(np.unique(datos[:,-1]))
 
 	# Analizamos la confianza de cada cluster
-	for cluster in clusters.values():
-		confianzas.append(confianzaCluster(cluster, datos, numClases))
+	for indiceCluster, cluster in clusters.items():
+		confianza, clase = confianzaCluster(cluster, datos, numClases)
+		confianzas[indiceCluster] = (confianza, clase)
 
 	return confianzas
 
@@ -206,13 +221,14 @@ def confianzaMedia(confianzas):
 	"""Función para obtener la media de todas las confianzas.
 
 	Args:
-		confianzas (list): Lista con las confianzas de varios clusters.
+		confianzas (dict): Diccionario con las confianzas de varios clusters.
+		La "key" se refiere a la clase mayoritaria, y el "value" a la confianza de dicho cluster.
 
 	Returns:
 		Float: Media de las confianzas.
 	"""
 	avg = 0
-	for confianza in confianzas:
-		avg += confianza[0]
+	for confianza, _ in confianzas.values():
+		avg += confianza
 
 	return avg/len(confianzas)

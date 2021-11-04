@@ -5,25 +5,25 @@ def matrizConfusionCluster(cluster, datos, clase, resInProb=False):
 		cluster (tuple): Cluster a analizar.
 		datos (numpy.array): Dataset
 		clase (int): Clase mayoritaria en el cluster
-		resInProb (bool): Variable opcional para obtener los valores 
+		resInProb (bool): "Result In Probability". Variable opcional para obtener los valores 
 		con valores entre 0-1
 
 	Returns:
 		tuple: Verdaderos positivos, verdaderos negativos, falsos positivos, falsos negativos.
 	"""
-	lenCluster = 1
-	lenDatos = 1
+	p = 1
+	n = 1
 	vp = verdaderosPositivos(cluster, datos, clase)
 	vn = verdaderosNegativos(cluster, datos, clase)
 	fp = falsosPositivos(cluster, datos, clase)
 	fn = falsosNegativos(cluster, datos, clase)
 
 	if resInProb:
-		lenCluster = len(cluster)
-		lenDatos = len(datos)
+		p = positivos(datos, clase)
+		n = negativos(datos, clase)
 
 	# Si resInProb es False, lenDatos=1 y lenCluster=1.
-	return vp/lenCluster, vn/lenDatos, fp/lenCluster, fn/lenDatos
+	return vp/p, vn/n, fp/p, fn/n
 
 
 def verdaderosPositivos(cluster, datos, clase):
@@ -106,3 +106,37 @@ def falsosNegativos(cluster, datos, clase):
 		if fila[-1] == clase and i not in cluster:
 			fn += 1
 	return fn
+
+
+def positivos(datos, clase):
+	"""Función para obtener el número de negativos
+
+	Args:
+		datos (numpy.array): Dataset.
+		clase (int): Clase mayoritaria del cluster.
+
+	Returns:
+		int: Número de falsos negativos en el cluster.
+	"""
+	p = 0
+	for fila in datos:
+		if fila[-1] == clase:
+			p += 1
+	return p
+
+
+def negativos(datos, clase):
+	"""Función para obtener el número de negativos
+
+	Args:
+		datos (numpy.array): Dataset.
+		clase (int): Clase mayoritaria del cluster.
+
+	Returns:
+		int: Número de falsos negativos en el cluster.
+	"""
+	n = 0
+	for fila in datos:
+		if fila[-1] != clase:
+			n += 1
+	return n
