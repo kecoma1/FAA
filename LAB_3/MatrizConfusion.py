@@ -1,29 +1,21 @@
-def matrizConfusionCluster(cluster, datos, clase, resInProb=False):
+def matrizConfusionCluster(cluster, datos, clase):
 	"""Función que dado un cluster, devuelve los datos de una matríz de confusión.
 
 	Args:
 		cluster (tuple): Cluster a analizar.
 		datos (numpy.array): Dataset
-		clase (int): Clase mayoritaria en el cluster
-		resInProb (bool): "Result In Probability". Variable opcional para obtener los valores 
-		con valores entre 0-1
+		clase (int): Clase mayoritaria en el cluster.
 
 	Returns:
 		tuple: Verdaderos positivos, verdaderos negativos, falsos positivos, falsos negativos.
 	"""
-	p = 1
-	n = 1
 	vp = verdaderosPositivos(cluster, datos, clase)
 	vn = verdaderosNegativos(cluster, datos, clase)
 	fp = falsosPositivos(cluster, datos, clase)
 	fn = falsosNegativos(cluster, datos, clase)
 
-	if resInProb:
-		p = positivos(datos, clase)
-		n = negativos(datos, clase)
-
 	# Si resInProb es False, lenDatos=1 y lenCluster=1.
-	return vp/p, vn/n, fp/p, fn/n
+	return vp, vn, fp, fn
 
 
 def verdaderosPositivos(cluster, datos, clase):

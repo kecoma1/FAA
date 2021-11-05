@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import math
-from Datos import Datos
 
 
 def distanciaEuclidea(x, y, w=None):

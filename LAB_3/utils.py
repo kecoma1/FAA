@@ -1,8 +1,10 @@
+from numpy.lib.histograms import _ravel_and_check_weights
 from ClasificadorKNN import ClasificadorKNN
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
-import numpy as np
 import matplotlib.pyplot as plt
-
+import MatrizConfusion as MC
+import KMeans
+import numpy as np
 
 porcentajesTest = [25, 20, 15, 10]
 kFoldsTest = [4, 6, 8, 10]
@@ -120,7 +122,13 @@ def plot_VC(data, dataNorm):
         plt.legend()
 
 
-def plot_matriz_confusion(matriz):
-    plt.figure(figsize=(20,20))
-    plt.bar(titulos_matriz_confusion, matriz)
-    plt.ylabel("Porcentaje de la frecuencia")
+def test_KMeans(k, data):
+    clusters = KMeans.kMeans(k, data.datos)
+    confianzas = KMeans.confianzas(clusters, data.datos)
+    plt.figure(figsize=(25, 35))
+    for i, (indiceCluster, cluster) in enumerate(clusters.items()):
+        vp, vn, fp, fn = MC.matrizConfusionCluster(cluster, data.datos, confianzas[indiceCluster][1])
+        plt.subplot(5, 2, i+1)
+        plt.bar(titulos_matriz_confusion, [vp, vn, fp, fn])    
+        plt.title(f"Cluster {indiceCluster+1} - Clase mayoritaria '{confianzas[indiceCluster][1]}'")
+        plt.ylabel("Porcentaje de la frecuencia")
