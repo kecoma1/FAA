@@ -1,9 +1,7 @@
-from numpy.core.fromnumeric import shape
 from Clasificador import Clasificador
-from scipy.stats import norm
 from KMeans import distanciaEuclidea
+from Datos import normalizarDatos, calcularMediasDesv
 import numpy as np
-import math
 
 
 class ClasificadorKNN(Clasificador):
@@ -24,15 +22,15 @@ class ClasificadorKNN(Clasificador):
 		self.norm = norm
 
 	def entrenamiento(self, datostrain, atributosDiscretos, _):
-		# Normalizamos los datos
-		self.datosNormalizados = self.normalizarDatos(datostrain, atributosDiscretos) if self.norm else datostrain
+		# Calculamos las medias y las desviaciones
+		self.mediasDesv = calcularMediasDesv(datostrain, atributosDiscretos) if self.norm else datostrain
 
 		# Calculamos la probabilidad de las clases
 		self.calculaPClases(self.datosNormalizados)
 
 	def clasifica(self, datostest, atributosDiscretos, _):
 		prediccionesClases = []
-		testNormalizados = self.normalizarDatos(datostest, atributosDiscretos)
+		testNormalizados = normalizarDatos(datostest, atributosDiscretos, mediasDesv=self.mediasDesv)
 		for rowTest in testNormalizados: # Por cada fila en el test
 			prediccionesClases.append(self.clasificaFila(rowTest))
 		return prediccionesClases, []
@@ -47,44 +45,6 @@ class ClasificadorKNN(Clasificador):
 		_, self.freq = np.unique(datostrain[:,-1], return_counts=True)
 		self.N = sum(self.freq)
 		self.pClases = np.array([i/self.N for i in self.freq])
-
-	def calcularMediasDesv(self, datos, nominalAtributos):
-		"""Función para calcular las medias y las desviaciones típicas.
-
-		Args:
-			datos (numpy.array): Array numpy con los datos.
-			nominalAtributos (list): Lista con el tipo de las columnas (nominal o no; True o False)
-
-		Returns:
-			list: Lista de arrays en los cuales está la media y la desviación de cada columna.
-		"""
-		mediasDesv = []
-		for i, col in enumerate(datos.transpose()):
-			if not nominalAtributos[i]:
-				mediasDesv.append(np.array([np.mean(col), np.std(col)]))
-			else:
-				mediasDesv.append(np.array([0, 0]))
-		return mediasDesv
-
-	def normalizarDatos(self, datos, nominalAtributos):
-		"""Función para normalizar datos.
-
-		Args:
-			datos (numpy.array): Array numpy con los datos.
-			nominalAtributos (list): Lista con el tipo de las columnas (nominal o no; True o False)
-
-		Returns:
-			numpy.array: Array numpy con los datos normalizados.
-		"""
-		mediasDevs = self.calcularMediasDesv(datos, nominalAtributos)
-		datosNormalizados = np.zeros(shape=datos.shape)
-		for numCol, col in enumerate(datos.transpose()):
-			if nominalAtributos[numCol] or numCol == datos.shape[1]-1:
-				datosNormalizados[:,numCol] = col
-			else:
-				for numRow in range(len(col)):
-					datosNormalizados[numRow][numCol] = norm(mediasDevs[numCol][0], mediasDevs[numCol][1]).pdf(datos[numRow][numCol])
-		return datosNormalizados
 
 	def clasificaFila(self, fila):
 		"""Dada una fila del test, buscamos las K clases más cercanas a la fila.

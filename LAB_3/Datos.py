@@ -1,6 +1,7 @@
-from random import shuffle
+from scipy.stats import norm
 import pandas as pd
 import numpy as np
+
 
 class Datos:
 
@@ -89,3 +90,44 @@ class Datos:
                     self.datos[i][j] = self.diccionario[col[0]][col[1]]
                 else:
                     self.datos[i][j] = col[1]
+
+
+def calcularMediasDesv(datos, nominalAtributos):
+    """Función para calcular las medias y las desviaciones típicas.
+
+    Args:
+        datos (numpy.array): Array numpy con los datos.
+        nominalAtributos (list): Lista con el tipo de las columnas (nominal o no; True o False)
+
+    Returns:
+        list: Lista de arrays en los cuales está la media y la desviación de cada columna.
+    """
+    mediasDesv = []
+    for i, col in enumerate(datos.transpose()):
+        if not nominalAtributos[i]:
+            mediasDesv.append(np.array([np.mean(col), np.std(col)]))
+        else:
+            mediasDesv.append(np.array([0, 0]))
+    return mediasDesv
+
+
+def normalizarDatos(datos, nominalAtributos, mediasDesv=None):
+    """Función para normalizar datos.
+
+    Args:
+        datos (numpy.array): Array numpy con los datos.
+        nominalAtributos (list): Lista con el tipo de las columnas (nominal o no; True o False).
+        mediasDesv (list): Lista con las desviaciones y las medias.
+
+    Returns:
+        numpy.array: Array numpy con los datos normalizados.
+    """
+    md = calcularMediasDesv(datos, nominalAtributos) if mediasDesv is None else mediasDesv
+    datosNormalizados = np.zeros(shape=datos.shape)
+    for numCol, col in enumerate(datos.transpose()):
+        if nominalAtributos[numCol] or numCol == datos.shape[1]-1:
+            datosNormalizados[:,numCol] = col
+        else:
+            for numRow in range(len(col)):
+                datosNormalizados[numRow][numCol] = norm(md[numCol][0], md[numCol][1]).pdf(datos[numRow][numCol])
+    return datosNormalizados
