@@ -1,7 +1,6 @@
 from Clasificador import Clasificador
-from KMeans import distanciaEuclidea
-from Datos import normalizarDatos, calcularMediasDesv
 import numpy as np
+import Datos
 
 
 class ClasificadorKNN(Clasificador):
@@ -17,22 +16,30 @@ class ClasificadorKNN(Clasificador):
 	normalizados.
 	"""
 
-	def __init__(self, K, norm=True):
+	def __init__(self, K, distanceFunc, norm=True):
+		"""Constructor.
+
+		Args:
+			K (int): K a usar en el algoritmo KNN.
+			distanceFunc (function): Función para calcular distancias.
+			norm (bool, optional): Para normalizar datos o no. Por defecto a True.
+		"""
 		self.K = K
+		self.distanceFunc = distanceFunc
 		self.norm = norm
 
 	def entrenamiento(self, datostrain, atributosDiscretos, _):
 		# Calculamos las medias y las desviaciones
-		self.mediasDesv = calcularMediasDesv(datostrain, atributosDiscretos) if self.norm else datostrain
+		self.mediasDesv = Datos.calcularMediasDesv(datostrain, atributosDiscretos) if self.norm else None
 
 		# Calculamos la probabilidad de las clases
-		self.calculaPClases(self.datosNormalizados)
+		self.calculaPClases(datostrain)
 
 	def clasifica(self, datostest, atributosDiscretos, _):
 		prediccionesClases = []
-		testNormalizados = normalizarDatos(datostest, atributosDiscretos, mediasDesv=self.mediasDesv)
+		testNormalizados =  Datos.normalizarDatos(datostest, atributosDiscretos, mediasDesv=self.mediasDesv)
 		for rowTest in testNormalizados: # Por cada fila en el test
-			prediccionesClases.append(self.clasificaFila(rowTest))
+			prediccionesClases.append(self.clasificaFila(rowTest, datostest))
 		return prediccionesClases, []
 
 	def calculaPClases(self, datostrain):
@@ -46,19 +53,20 @@ class ClasificadorKNN(Clasificador):
 		self.N = sum(self.freq)
 		self.pClases = np.array([i/self.N for i in self.freq])
 
-	def clasificaFila(self, fila):
+	def clasificaFila(self, fila, datos):
 		"""Dada una fila del test, buscamos las K clases más cercanas a la fila.
 
 		Args:
-			fila: Fila del test a comprobar
+			fila: Fila del test a comprobar.
+			datos: Datos a comprobar.
 
 		Returns:
 			Devuelve la clase adecuada dada la fila.
 		"""
 		distancias = [] # Lista con tuplas. [(distancia, clase), ...]
 		# Calculamos las distancias
-		for rowData in self.datosNormalizados:
-			distancias.append((distanciaEuclidea(fila, rowData), rowData[-1]))
+		for rowData in datos:
+			distancias.append((self.distanceFunc(fila, rowData), rowData[-1]))
 
 		return self.getClaseKVecinos(distancias)
 

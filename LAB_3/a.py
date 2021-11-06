@@ -3,10 +3,12 @@ from Datos import Datos
 from scipy.stats import norm
 import numpy as np
 from ClasificadorKNN import ClasificadorKNN
+from Distancias import distanciaEuclidea
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
 import KMeans
 import MatrizConfusion as MC
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import KMeans as SKKMeans
 from sklearn.model_selection import cross_val_score, train_test_split
 import utils
 
@@ -14,31 +16,30 @@ nums = Datos("ConjuntosDatosP2KMeans/nums.csv")
 wdbc = Datos("ConjuntosDatosP2Knn/wdbc.data")
 pima = Datos("ConjuntosDatosP2Knn/pima-indians-diabetes.data")
 
-def error(datos, pred):
-    errores = 0
-    for i in range(datos.shape[0]):
-        if datos[i] != pred[i]:
-            errores += 1
-    return (errores/datos.shape[0])
+matrices_propia_10, _ = utils.test_KMeans(10, nums)
+matrices_SK_10, centroides = utils.test_KMeans_SK(10, nums)
+clusters = utils.create_clusters_for_comparing(matrices_propia_10, matrices_SK_10, 10)
+utils.plot_SK_Propia_histograms_KMEANS(clusters, 10)
 
-def test_VS(X, y, times, testSize, model):
-    errores = np.zeros(times)
-    for i in range(times):
-        XTrain, XTest, yTrain, yTest = train_test_split(
-            X, y, test_size=testSize)
-        model.fit(XTrain, yTrain)
-        yPred = model.predict(XTest)
-        errores[i] = error(yTest, yPred)
-    return np.mean(errores), np.std(errores)
-
-X = pima.datos[:,[i for i in range(pima.datos.shape[1]-1)]]
-y = pima.datos[:,-1]
+X = nums.datos[:,[i for i in range(nums.datos.shape[1]-1)]]
+y = nums.datos[:,-1]
 knn=KNeighborsClassifier(5)
 
 #utils.test_knn_SK(pima, wdbc)
-utils.test_knn_norm_SK(pima, wdbc)
+
+kmeans = SKKMeans(10)
+a=kmeans.fit(nums.datos)
+
+print(a.labels_)
 
 
+
+
+clusters, centroides = KMeans.kMeans(10, nums.datos)
+print(centroides)
+
+for a, b in zip(centroides, a.cluster_centers_):
+    print(distanciaEuclidea(a[0], b))
 
 """
 clusters = KMeans.kMeans(10, datos1.datos)

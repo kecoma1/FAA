@@ -1,53 +1,6 @@
+from Distancias import distanciaEuclidea
 import numpy as np
 import random
-import math
-
-
-def distanciaEuclidea(x, y, w=None):
-	"""Función para calcular la distancia euclidea
-	entre 2 vectores. También se calcula la distancia euclidea
-	ponderada en caso de que se pasen las ponderaciones.
-
-	Args:
-		x (numpy.array): Vector.
-		y (numpy.array): Vector.
-		w (numpy.array): Vector con las ponderaciones.
-
-	Returns:
-		float: Distancia euclidea
-	"""
-	if w is None:
-		return sum([(xi-yi)**2 for xi, yi in zip(x, y)])**(1/2)
-	else:
-		return sum([((xi-yi)*wi)**2 for xi, yi, wi in zip(x, y, w)])**(1/2)
-
-
-def distanciaManhattan(x, y):
-	"""Función para calcular la distancia manhattan
-	entre 2 vectores.
-
-	Args:
-		x (numpy.array): Vector.
-		y (numpy.array): Vector.
-
-	Returns:
-		float: Distancia Manhattan
-	"""
-	return [math.abs(xi-yi) for xi, yi in zip(x, y)]
-
-
-def distanciaChevychev(x, y):
-	"""Función para calcular la distancia manhattan
-	entre 2 vectores.
-
-	Args:
-		x (numpy.array): Vector.
-		y (numpy.array): Vector.
-
-	Returns:
-		float: Distancia Chevychev
-	"""
-	return [math.abs(xi-yi)**2 for xi, yi in zip(x, y)]
 
 
 def eligeCentroides(k, longitudDatos):
@@ -165,7 +118,7 @@ def kMeans(k, datos, maxIter=0):
 		# En el caso de establecer un número máximo de iteraciones
 		i = i+1 if maxIter != -1 else i
 
-	return clusters
+	return clusters, centroides
 
 
 def confianzas(clusters, datos):
@@ -231,3 +184,23 @@ def confianzaMedia(confianzas):
 		avg += confianza
 
 	return avg/len(confianzas)
+
+
+def get_SK_clusters(labels, k):
+    """Función para obtener un diccionario con los clusters
+    dado el atributo "labels" del objeto SKLearn de KMeans.
+
+    Args:
+        labels: Array donde cada valor en este corresponde
+        al cluster asociado de la fila en el dataset.
+        k (int): Número de clusters.
+
+    Returns:
+        dict: Diccionario con los clusters.
+    """
+    clusters = { i: [] for i in range(k)}
+
+    for index, cluster in enumerate(labels):
+        clusters[cluster].append(index)
+
+    return clusters

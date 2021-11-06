@@ -3,10 +3,11 @@ from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cluster import KMeans as SKKMeans
 from ClasificadorKNN import ClasificadorKNN
-from Datos import normalizarDatos
+from Distancias import distanciaEuclidea
 import matplotlib.pyplot as plt
 import MatrizConfusion as MC
 import numpy as np
+import Datos
 import KMeans
 
 
@@ -14,6 +15,7 @@ porcentajesTest = [25, 20, 15, 10]
 kFoldsTest = [4, 6, 8, 10]
 KNN_END_TEST_K = 37
 titulos_matriz_confusion = ["Verdaderos Positivos", "Verdaderos Negativos", "Falsos Positivos", "Falsos Negativos"]
+
 
 def knn_test(pima, wdbc):
     errorMedioPimaVC = {}
@@ -85,7 +87,7 @@ def knn_test_norm(pima, wdbc):
 
 
 def knn_test_k(k, norm, dataset, particionado):
-    knn = ClasificadorKNN(k, norm)
+    knn = ClasificadorKNN(k, distanciaEuclidea, norm)
     e, _ = knn.validacion(particionado, dataset, knn)
     error = e
     return error
@@ -95,7 +97,7 @@ def plot_VS(data, dataNorm):
     plt.figure(figsize=(20,20))
     for i, porcentaje in enumerate(porcentajesTest):
         plt.subplot(3, 2, i+1)
-        X = [k for k in range(1, KNN_END_TEST_K, 2)]
+        X = [k for k in range(len(data))]
         y = [values[i] for _, values in data.items()]
         yNorm = [values[i] for _, values in dataNorm.items()]
         plt.plot(X, y)
@@ -106,11 +108,30 @@ def plot_VS(data, dataNorm):
         plt.legend()
 
 
+def plot_VS_SK_Propio(dataP, dataNormP, dataSK, dataNormSK):
+    plt.figure(figsize=(20,20))
+    for i, porcentaje in enumerate(porcentajesTest):
+        plt.subplot(3, 2, i+1)
+        X = [k for k in range(len(dataP))]
+        yP = [values[i] for _, values in dataP.items()]
+        ySK = [values[i] for _, values in dataSK.items()]
+        yNormP = [values[i] for _, values in dataNormP.items()]
+        yNormSK = [values[i] for _, values in dataNormSK.items()]
+        plt.plot(X, yP, label="KNN Propio")
+        plt.plot(X, yNormP, label="Norm. KNN Propio")
+        plt.plot(X, ySK, label="KNN SK")
+        plt.plot(X, yNormSK, label="Norm. KNN SK")
+        plt.title(f"K-NN Validación simple {porcentaje}%")
+        plt.xlabel("Valor K")
+        plt.ylabel("Error")
+        plt.legend()
+
+
 def plot_VC(data, dataNorm):
     plt.figure(figsize=(20,20))
     for i, kFold in enumerate(kFoldsTest):
         plt.subplot(3, 2, i+1)
-        X = [k for k in range(1, KNN_END_TEST_K, 2)]
+        X = [k for k in range(len(data))]
         y = [values[i] for _, values in data.items()]
         yNorm = [values[i] for _, values in dataNorm.items()]
         plt.plot(X, y)
@@ -121,8 +142,28 @@ def plot_VC(data, dataNorm):
         plt.legend()
 
 
+def plot_VC_SK_Propio(dataP, dataNormP, dataSK, dataNormSK):
+    plt.figure(figsize=(20,20))
+    for i, kFold in enumerate(kFoldsTest):
+        plt.subplot(3, 2, i+1)
+        X = [k for k in range(len(dataP))]
+        yP = [values[i] for _, values in dataP.items()]
+        ySK = [values[i] for _, values in dataSK.items()]
+        yNormP = [values[i] for _, values in dataNormP.items()]
+        yNormSK = [values[i] for _, values in dataNormSK.items()]
+        plt.plot(X, yP, label="KNN Propio")
+        plt.plot(X, yNormP, label="Norm. KNN Propio")
+        plt.plot(X, ySK, label="KNN SK")
+        plt.plot(X, yNormSK, label="Norm. KNN SK")
+        plt.title(f"K-NN Validación cruzada K={kFold}")
+        plt.xlabel("Valor K")
+        plt.ylabel("Error")
+        plt.legend()
+
+
 def test_KMeans(k, data):
-    clusters = KMeans.kMeans(k, data.datos)
+    X = data.datos[:,[i for i in range(data.datos.shape[1]-1)]]
+    clusters, centroides = KMeans.kMeans(k, X)
     confianzas = KMeans.confianzas(clusters, data.datos)
     plt.figure(figsize=(25, 35))
     matrices = []
@@ -133,7 +174,71 @@ def test_KMeans(k, data):
         plt.title(f"Cluster {indiceCluster+1} - Clase mayoritaria '{confianzas[indiceCluster][1]}'")
         plt.ylabel("Porcentaje de la frecuencia")
         matrices.append([(vp, vn, fp, fn), confianzas[indiceCluster][1]])
-    return matrices
+    return matrices, centroides
+
+
+def test_KMeans_SK(k, data):
+    X = data.datos[:,[i for i in range(data.datos.shape[1]-1)]]
+    kmeans = SKKMeans(k)
+    res = kmeans.fit(X)
+    clusters = KMeans.get_SK_clusters(res.labels_, k)
+    confianzas = KMeans.confianzas(clusters, data.datos)
+    plt.figure(figsize=(25, 35))
+    matrices = []
+    for i, (indiceCluster, cluster) in enumerate(clusters.items()):
+        vp, vn, fp, fn = MC.matrizConfusionCluster(cluster, data.datos, confianzas[indiceCluster][1])
+        plt.subplot(int(k/2)+1, 2, i+1)
+        plt.bar(titulos_matriz_confusion, [vp, vn, fp, fn])    
+        plt.title(f"SKLearn - Cluster {indiceCluster+1} - Clase mayoritaria '{confianzas[indiceCluster][1]}'")
+        plt.ylabel("Porcentaje de la frecuencia")
+        matrices.append([(vp, vn, fp, fn), confianzas[indiceCluster][1]])
+    return matrices, res.cluster_centers_
+
+
+def create_clusters_for_comparing(propia, SK, k):
+    clusters = {i : [] for i in range(k)}
+    for matriz, clase in propia:
+            clusters[clase].append((matriz, "propia"))
+
+    for matriz, clase in SK:
+        clusters[clase].append((matriz, "SK"))
+    
+    return clusters  
+
+
+def plot_SK_Propia_histograms_KMEANS(clusters, k):
+    plt.figure(figsize=(25, 35))
+    for i, (clase, matrices) in enumerate(clusters.items()):
+        plt.subplot(int(k/2)+1, 2, i+1)
+        vps = []
+        vns = []
+        fps = []
+        fns = [] 
+
+        for matriz, tipo in matrices:
+            vps.append((matriz[0], tipo))
+            vns.append((matriz[1], tipo))
+            fps.append((matriz[2], tipo))
+            fns.append((matriz[3], tipo))
+
+        for vp, tipo in vps:
+            titulo = "VP SKLearn" if tipo == "SK" else "VP Propia"
+            plt.bar(titulo, vp, alpha=0.5) 
+
+        for vn, tipo in vns:
+            titulo = "VN SKLearn" if tipo == "SK" else "VN Propia"
+            plt.bar(titulo, vn) 
+
+        for fp, tipo in fps:
+            titulo = "FP SKLearn" if tipo == "SK" else "FP Propia"
+            plt.bar(titulo, fp) 
+
+        for fn, tipo in fns:
+            titulo = "FN SKLearn" if tipo == "SK" else "FN Propia"
+            plt.bar(titulo, fn)    
+
+            plt.title(f"SKLearn - Cluster {i+1} - Clase mayoritaria '{clase}'")
+        plt.ylabel("Porcentaje de la frecuencia")    
 
 
 def print_matriz_confusion(matriz, titulo):
@@ -170,7 +275,7 @@ def test_VS(X, y, times, testSize, model):
     return np.mean(errores)
 
 
-def test_knn_SK(pima, wdbc):
+def knn_test_SK(pima, wdbc):
     XPima = pima.datos[:,[i for i in range(pima.datos.shape[1]-1)]]
     XWdbc = wdbc.datos[:,[i for i in range(wdbc.datos.shape[1]-1)]]
     yPima = pima.datos[:,-1]
@@ -210,9 +315,9 @@ def test_knn_SK(pima, wdbc):
     return errorMedioPimaVC_SK, errorMedioPimaVS_SK, errorMedioWDBCVC_SK, errorMedioWDBCVS_SK
 
 
-def test_knn_norm_SK(pima, wdbc):
-    pimaNorm = normalizarDatos(pima.datos, pima.nominalAtributos)
-    wdbcNorm = normalizarDatos(wdbc.datos, wdbc.nominalAtributos)
+def knn_test_norm_SK(pima, wdbc):
+    pimaNorm = Datos.normalizarDatos(pima.datos, pima.nominalAtributos)
+    wdbcNorm = Datos.normalizarDatos(wdbc.datos, wdbc.nominalAtributos)
 
     XPima = pimaNorm[:,[i for i in range(pimaNorm.shape[1]-1)]]
     XWdbc = wdbcNorm[:,[i for i in range(wdbcNorm.shape[1]-1)]]
