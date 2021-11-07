@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import MatrizConfusion as MC
 import numpy as np
 import Datos
-import KMeans
+import ClusteringKMeans
 
 
 porcentajesTest = [25, 20, 15, 10]
@@ -163,8 +163,8 @@ def plot_VC_SK_Propio(dataP, dataNormP, dataSK, dataNormSK):
 
 def test_KMeans(k, data):
     X = data.datos[:,[i for i in range(data.datos.shape[1]-1)]]
-    clusters, centroides = KMeans.kMeans(k, X)
-    confianzas = KMeans.confianzas(clusters, data.datos)
+    clusters, centroides = ClusteringKMeans.kMeans(k, X)
+    confianzas = ClusteringKMeans.confianzas(clusters, data.datos)
     plt.figure(figsize=(25, 35))
     matrices = []
     for i, (indiceCluster, cluster) in enumerate(clusters.items()):
@@ -181,8 +181,8 @@ def test_KMeans_SK(k, data):
     X = data.datos[:,[i for i in range(data.datos.shape[1]-1)]]
     kmeans = SKKMeans(k)
     res = kmeans.fit(X)
-    clusters = KMeans.get_SK_clusters(res.labels_, k)
-    confianzas = KMeans.confianzas(clusters, data.datos)
+    clusters = ClusteringKMeans.get_SK_clusters(res.labels_, k)
+    confianzas = ClusteringKMeans.confianzas(clusters, data.datos)
     plt.figure(figsize=(25, 35))
     matrices = []
     for i, (indiceCluster, cluster) in enumerate(clusters.items()):

@@ -5,7 +5,7 @@ import numpy as np
 from ClasificadorKNN import ClasificadorKNN
 from Distancias import distanciaEuclidea
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
-import KMeans
+import ClusteringKMeans
 import MatrizConfusion as MC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cluster import KMeans as SKKMeans
@@ -35,7 +35,7 @@ print(a.labels_)
 
 
 
-clusters, centroides = KMeans.kMeans(10, nums.datos)
+clusters, centroides = ClusteringKMeans.kMeans(10, nums.datos)
 print(centroides)
 
 for a, b in zip(centroides, a.cluster_centers_):
