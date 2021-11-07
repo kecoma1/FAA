@@ -249,7 +249,11 @@ def print_matriz_confusion(matriz, titulo):
     print("\t\t+-------+-------+")
     print(f"Falsos\t\t+ {matriz[2]}\t+ {matriz[3]}\t+")
     print("\t\t+-------+-------+")
-
+    print("Especificidad:", MC.especificidad(matriz[1], matriz[2]))
+    print("Exactitud:", MC.exactitud(matriz[0], matriz[1], matriz[2], matriz[3]))
+    print("Sensibilidad:", MC.sensibilidad(matriz[0], matriz[3]))
+    print("Precisión:", MC.precision(matriz[0], matriz[2]))
+    
 
 def tablas_matriz_confusion(matrices):
     for i, matriz in enumerate(matrices):
