@@ -227,15 +227,15 @@ def plot_SK_Propia_histograms_KMEANS(clusters, k):
 
         for vn, tipo in vns:
             titulo = "VN SKLearn" if tipo == "SK" else "VN Propia"
-            plt.bar(titulo, vn) 
+            plt.bar(titulo, vn, alpha=0.5) 
 
         for fp, tipo in fps:
             titulo = "FP SKLearn" if tipo == "SK" else "FP Propia"
-            plt.bar(titulo, fp) 
+            plt.bar(titulo, fp, alpha=0.5) 
 
         for fn, tipo in fns:
             titulo = "FN SKLearn" if tipo == "SK" else "FN Propia"
-            plt.bar(titulo, fn)    
+            plt.bar(titulo, fn, alpha=0.5)    
 
             plt.title(f"SKLearn - Cluster {i+1} - Clase mayoritaria '{clase}'")
         plt.ylabel("Porcentaje de la frecuencia")    
