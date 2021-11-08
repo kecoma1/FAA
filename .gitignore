@@ -2,6 +2,5 @@
 ConjuntosDatos
 *.pyc
 __pycache__
-a.py
 ConjuntosDatosP2KMeans.zip
 ConjuntosDatosP2Knn.zip
