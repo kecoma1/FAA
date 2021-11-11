@@ -1,7 +1,7 @@
+from operaciones import sigmoid
 from Clasificador import Clasificador
-from operaciones import productoEscalar, sigmoid
+from random import randint
 import numpy as np
-import Datos
 
 
 class ClasificadorRegresionLogistica(Clasificador):
@@ -22,7 +22,7 @@ class ClasificadorRegresionLogistica(Clasificador):
 			for row in datostrain: # Recorremos todos los ejemplos.
 				X = row[:-1]
 				clase = row[-1]
-				sigmoidJ =  sigmoid(productoEscalar(self.pesos, X))
+				sigmoidJ =  sigmoid(np.dot(self.pesos, X))
 
 				# Actualizamos los pesos
 				self.pesos = self.pesos - (self.constanteAprendizaje*(sigmoidJ-clase))*X
@@ -32,7 +32,10 @@ class ClasificadorRegresionLogistica(Clasificador):
 		res = []
 		for row in datostest:
 			X = row[:-1]
-			prob = sigmoid(productoEscalar(self.pesos, X))
-
-			res.append(row[-1] if prob > 0.5 else )
-
+			prob = sigmoid(np.dot(self.pesos, X))
+			if prob == 0.5:
+				clase = randint(0, 1)
+			else:
+				clase = 1 if prob > 0.5 else 0
+			res.append(clase)
+		return res, []
