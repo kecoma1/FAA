@@ -1,0 +1,1 @@
+- Corrección en el clasificador K-NN. En el método clasificar siempre se normalizaban los datos, ahora solo se hace cuando el objeto tiene el atributo norm a true.

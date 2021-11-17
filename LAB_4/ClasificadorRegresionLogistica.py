@@ -5,8 +5,14 @@ import numpy as np
 
 
 class ClasificadorRegresionLogistica(Clasificador):
-	"""
-	w' = w - constanteAprendizaje*(sigmoide(pesos*input)-clase)*input 
+	"""Clase que implementa el clasificador de regresión logística.
+	Función para entrenar (actualización de pesos): 
+		w' = w - constanteAprendizaje*(sigmoide(pesos*input)-clase)*input 
+	
+	Función para clasificar:
+		sigmoide(pesos, input) > 0.5 -> 1
+		sigmoide(pesos, input) < 0.5 -> 0
+		sigmoide(pesos, input) == 0.5 -> Valor aleatorio entre 0 y 1.
 	"""
 
 	def __init__(self, constanteAprendizaje, epocas):

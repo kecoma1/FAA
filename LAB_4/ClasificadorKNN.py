@@ -37,7 +37,7 @@ class ClasificadorKNN(Clasificador):
 
 	def clasifica(self, datostest, atributosDiscretos, _):
 		prediccionesClases = []
-		testNormalizados =  Datos.normalizarDatos(datostest, atributosDiscretos, mediasDesv=self.mediasDesv)
+		testNormalizados =  Datos.normalizarDatos(datostest, atributosDiscretos, mediasDesv=self.mediasDesv) if self.norm  else datostest
 		for rowTest in testNormalizados: # Por cada fila en el test
 			prediccionesClases.append(self.clasificaFila(rowTest, datostest))
 		return prediccionesClases, []
