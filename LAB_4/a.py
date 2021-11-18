@@ -9,15 +9,15 @@ from Datos import Datos
 import MatrizConfusion as MC
 import utils
 
-wdbc = Datos("ConjuntosDatos/wdbc.data")
-indians = Datos("ConjuntosDatos/pima-indians-diabetes.data")
+wdbc = Datos("ConjuntosDatos/wdbc__a.data")
+indians = Datos("ConjuntosDatos/pima-indians-diabetes__a.data")
 nums = Datos("ConjuntosDatos/nums.csv")
 ttt = Datos("ConjuntosDatos/tic-tac-toe.data")
 german = Datos("ConjuntosDatos/german.data")
 lent = Datos("ConjuntosDatos/lentillas.data")
 
-utils.RL_test(indians, wdbc)
-
+errorMedioPimaVC, errorMedioPimaVS, errorMedioWDBCVC, errorMedioWDBCVS = utils.RL_test(indians, wdbc)
+utils.plot_epoch(errorMedioPimaVC, 0.5, True)
 #crl = ClasificadorRegresionLogistica(1, 10)
 #crl.entrenamiento(wdbc.datos, wdbc.nominalAtributos, wdbc.diccionario)
 """
@@ -40,7 +40,6 @@ sgdc = SGDClassifier()
 X = indians.datos[:,[i for i in range(indians.datos.shape[1]-1)]]
 y = indians.datos[:,-1]
 print("SKL - SGDClassifier:", 1-cross_val_score(sgdc, X, y).mean())
-"""
 
 crl = ClasificadorRegresionLogistica(1, 1000)
 cknn = ClasificadorKNN(35, distanciaEuclidea)
@@ -67,4 +66,5 @@ print(MC.matrizConfusionClasificador(german, crl, 30))
 print(MC.matrizConfusionClasificador(german, cknn, 30))
 print(MC.matrizConfusionClasificador(german, cnb, 30))
 
+"""
 
