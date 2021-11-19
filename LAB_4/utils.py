@@ -1,7 +1,9 @@
 from ClasificadorRegresionLogistica import ClasificadorRegresionLogistica
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
 from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 RL_step_1 = 15
@@ -22,15 +24,14 @@ titulos_histogramas_aprendizaje = ["Cte. Aprendizaje 0.5", "Cte. Aprendizaje 1.0
 
 
 def RL_test(pima, wdbc):
-    errorMedioPimaVC = { epoch: { (aprendizaje/10): [] for aprendizaje in range(RL_step_aprendizaje, RL_aprendizaje_END, RL_step_aprendizaje) } for epoch in ranges_test }
-    errorMedioPimaVS = { epoch: { (aprendizaje/10): [] for aprendizaje in range(RL_step_aprendizaje, RL_aprendizaje_END, RL_step_aprendizaje) } for epoch in ranges_test }
-    errorMedioWDBCVC = { epoch: { (aprendizaje/10): [] for aprendizaje in range(RL_step_aprendizaje, RL_aprendizaje_END, RL_step_aprendizaje) } for epoch in ranges_test }
-    errorMedioWDBCVS = { epoch: { (aprendizaje/10): [] for aprendizaje in range(RL_step_aprendizaje, RL_aprendizaje_END, RL_step_aprendizaje) } for epoch in ranges_test }
+    errorMedioPimaVC = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+    errorMedioPimaVS = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+    errorMedioWDBCVC = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+    errorMedioWDBCVS = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
 
     for epoch in ranges_test:
         print(f"\n*-*-*-**-*-*-**-*-*-**-*-*-**-*-**-*Épocas={epoch}*-*-*-**-*-*-**-*-*-**-*-*-**-*-**-*")
-        for aprendizaje in range(RL_step_aprendizaje, RL_aprendizaje_END, RL_step_aprendizaje):
-            aprendizaje /= 10
+        for aprendizaje in aprendizajes:
 
             print(f"Test Épocas={epoch} Constante aprendizaje={aprendizaje}\tPima - Error\t\tWDBC - Error")
             
@@ -81,7 +82,7 @@ def plot_aprendizaje(data, epoch, vs_vc):
     test_ranges = porcentajesTest if vs_vc else kFoldsTest
     for i, test_range in enumerate(test_ranges):
         X, Y = ([i/10 for i in range(5, 25, 5)], 
-                [data[epoch][aprendizaje/10] for aprendizaje in range(5, 25, 5)])
+                [data[epoch][aprendizaje/10][i] for aprendizaje in range(5, 25, 5)])
         plt.subplot(3, 2, i+1)
         plt.plot(X, Y)    
         plt.title(f"Test {test_range}{string}. Regresión logística. Épocas = {epoch}")
@@ -94,15 +95,101 @@ def avg_aprendizaje(data, epoch, aprendizaje):
 
 
 def plot_histograms(datos, epoch):
-    plt.figure(figsize=(20,20))
-    medias = { i/10: [] for i in range(5, 25, 5)}
-    aprendizajes
+    plt.figure(figsize=(10,10))
+    medias = { i: [] for i in aprendizajes}
 
     for data in datos:
-        for i, aprendizaje in enumerate(aprendizajes):
+        for aprendizaje in aprendizajes:
             media = avg_aprendizaje(data, epoch, aprendizaje)
-            medias[i] += media
-        for i in range(4):
-            medias[i] /= 4
-    plt.bar(titulos_histogramas_aprendizaje, medias)
-    plt.ylabel("Error")
+            medias[aprendizaje].append(media)
+
+    for key in medias.keys():
+        medias[key] = sum(medias[key])/len(medias[key])
+    plt.bar(titulos_histogramas_aprendizaje, medias.values())
+    plt.ylabel("Error medio")
+
+
+def RL_test_SK_logistic(pima, wdbc):
+    errorMedioPimaVC = { epoch: [] for epoch in ranges_test }
+    errorMedioPimaVS = { epoch: [] for epoch in ranges_test }
+    errorMedioWDBCVC = { epoch: [] for epoch in ranges_test }
+    errorMedioWDBCVS = { epoch: [] for epoch in ranges_test }
+
+    XPima = pima.datos[:,[i for i in range(pima.datos.shape[1]-1)]]
+    XWdbc = wdbc.datos[:,[i for i in range(wdbc.datos.shape[1]-1)]]
+    yPima = pima.datos[:,-1]
+    yWdbc = wdbc.datos[:,-1]
+
+    for epoch in ranges_test:
+        clr = LogisticRegression(max_iter=epoch)
+        print(f"\n*-*-*-**-*-*-**-*-*-**-*-*-**-*-**-*Épocas={epoch}*-*-*-**-*-*-**-*-*-**-*-*-**-*-**-*")
+        print(f"Test Épocas={epoch}\t\t\t\tPima - Error\t\tWDBC - Error")
+            
+        for porcentaje, kFold in zip(porcentajesTest, kFoldsTest):
+            mediaVC = 1-cross_val_score(clr, XPima, yPima, cv=kFold).mean()
+            mediaVS = test_VS(XPima, yPima, int(100/porcentaje), porcentaje/100, clr)
+            mediaWdbcVC = 1-cross_val_score(clr, XWdbc, yWdbc, cv=kFold).mean()
+            mediaWdbcVS = test_VS(XWdbc, yWdbc, int(100/porcentaje), porcentaje/100, clr)
+
+            errorMedioPimaVC[epoch].append(mediaVC)
+            errorMedioPimaVS[epoch].append(mediaVS)
+            errorMedioWDBCVC[epoch].append(mediaWdbcVC)
+            errorMedioWDBCVS[epoch].append(mediaWdbcVS)
+    
+            print(f"Validación Simple {porcentaje}%\t\t\t{mediaVS:2f}\t\t{mediaWdbcVS:2f}")
+            print(f"Validación Cruzada K-Folds={kFold}\t\t{mediaVC:2f}\t\t{mediaWdbcVC:2f}")
+        print("================================================================================")
+    return errorMedioPimaVC, errorMedioPimaVS, errorMedioWDBCVC, errorMedioWDBCVS
+
+
+def RL_test_SK_SGBD(pima, wdbc):
+    errorMedioPimaVC = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+    errorMedioPimaVS = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+    errorMedioWDBCVC = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+    errorMedioWDBCVS = { epoch: { aprendizaje: [] for aprendizaje in aprendizajes } for epoch in ranges_test }
+
+    XPima = pima.datos[:,[i for i in range(pima.datos.shape[1]-1)]]
+    XWdbc = wdbc.datos[:,[i for i in range(wdbc.datos.shape[1]-1)]]
+    yPima = pima.datos[:,-1]
+    yWdbc = wdbc.datos[:,-1]
+
+    for epoch in ranges_test:
+        print(f"\n*-*-*-**-*-*-**-*-*-**-*-*-**-*-**-*Épocas={epoch}*-*-*-**-*-*-**-*-*-**-*-*-**-*-**-*")
+        for aprendizaje in aprendizajes:
+            print(f"Test Épocas={epoch} Constante aprendizaje={aprendizaje}\tPima - Error\t\tWDBC - Error")
+            
+            for porcentaje, kFold in zip(porcentajesTest, kFoldsTest):
+                clr = SGDClassifier(max_iter=epoch, learning_rate='constant', eta0=aprendizaje)
+                mediaVC = 1-cross_val_score(clr, XPima, yPima, cv=kFold).mean()
+                mediaVS = test_VS(XPima, yPima, int(100/porcentaje), porcentaje/100, clr)
+                mediaWdbcVC = 1-cross_val_score(clr, XWdbc, yWdbc, cv=kFold).mean()
+                mediaWdbcVS = test_VS(XWdbc, yWdbc, int(100/porcentaje), porcentaje/100, clr)
+
+                errorMedioPimaVC[epoch][aprendizaje].append(mediaVC)
+                errorMedioPimaVS[epoch][aprendizaje].append(mediaVS)
+                errorMedioWDBCVC[epoch][aprendizaje].append(mediaWdbcVC)
+                errorMedioWDBCVS[epoch][aprendizaje].append(mediaWdbcVS)
+                
+                print(f"Validación Simple {porcentaje}%\t\t\t\t{mediaVS:2f}\t\t{mediaWdbcVS:2f}")
+                print(f"Validación Cruzada K-Folds={kFold}\t\t\t{mediaVC:2f}\t\t{mediaWdbcVC:2f}")
+            print("================================================================================")
+    return errorMedioPimaVC, errorMedioPimaVS, errorMedioWDBCVC, errorMedioWDBCVS
+
+
+def error(datos, pred):
+    errores = 0
+    for i in range(datos.shape[0]):
+        if datos[i] != pred[i]:
+            errores += 1
+    return (errores/datos.shape[0])
+
+
+def test_VS(X, y, times, testSize, model):
+    errores = np.zeros(times)
+    for i in range(times):
+        XTrain, XTest, yTrain, yTest = train_test_split(
+            X, y, test_size=testSize)
+        model.fit(XTrain, yTrain)
+        yPred = model.predict(XTest)
+        errores[i] = error(yTest, yPred)
+    return np.mean(errores)

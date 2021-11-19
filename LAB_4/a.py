@@ -9,6 +9,12 @@ from Datos import Datos
 import MatrizConfusion as MC
 import utils
 
+# Para esconder los warnings
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+
 wdbc = Datos("ConjuntosDatos/wdbc__a.data")
 indians = Datos("ConjuntosDatos/pima-indians-diabetes__a.data")
 nums = Datos("ConjuntosDatos/nums.csv")
@@ -16,8 +22,7 @@ ttt = Datos("ConjuntosDatos/tic-tac-toe.data")
 german = Datos("ConjuntosDatos/german.data")
 lent = Datos("ConjuntosDatos/lentillas.data")
 
-errorMedioPimaVC, errorMedioPimaVS, errorMedioWDBCVC, errorMedioWDBCVS = utils.RL_test(indians, wdbc)
-utils.plot_epoch(errorMedioPimaVC, 0.5, True)
+errorMedioPimaVC, errorMedioPimaVS, errorMedioWDBCVC, errorMedioWDBCVS = utils.RL_test_SK_SGBD(indians, wdbc)
 #crl = ClasificadorRegresionLogistica(1, 10)
 #crl.entrenamiento(wdbc.datos, wdbc.nominalAtributos, wdbc.diccionario)
 """
