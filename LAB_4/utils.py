@@ -76,6 +76,22 @@ def plot_epoch(data, aprendizaje, vs_vc):
         plt.ylabel("Error")
 
 
+def plot_logistic(data, vs_vc):
+    string = "%" if vs_vc else "K-Folds"
+    plt.figure(figsize=(20,20))
+    test_ranges = porcentajesTest if vs_vc else kFoldsTest
+    for i, test_range in enumerate(test_ranges):
+        X, Y = ([], [])
+        for epoch, values in data.items():
+            X.append(epoch)
+            Y.append(values[i])
+        plt.subplot(3, 2, i+1)
+        plt.plot(X, Y)    
+        plt.title(f"Test {test_range}{string}. Regresión logística.")
+        plt.xlabel("Valor épocas")
+        plt.ylabel("Error")
+
+
 def plot_aprendizaje(data, epoch, vs_vc):
     string = "%" if vs_vc else " K-Folds"
     plt.figure(figsize=(20,20))
@@ -87,6 +103,27 @@ def plot_aprendizaje(data, epoch, vs_vc):
         plt.plot(X, Y)    
         plt.title(f"Test {test_range}{string}. Regresión logística. Épocas = {epoch}")
         plt.xlabel("Valor aprendizaje")
+        plt.ylabel("Error")
+
+
+def plot_VS(datos, aprendizaje, vs_vc, labels):
+    string = "%" if vs_vc else "K-Folds"
+    plt.figure(figsize=(20,20))
+    test_ranges = porcentajesTest if vs_vc else kFoldsTest
+    for i, test_range in enumerate(test_ranges):
+        plt.subplot(3, 2, i+1)
+        for i, data in enumerate(datos):
+            X, Y = ([], [])
+            for epoch, values in data.items():
+                X.append(epoch)
+                if "ogistic" in labels[i]:
+                    Y.append(values[i])
+                else:
+                    Y.append(values[aprendizaje][i])
+            plt.plot(X, Y, label=labels[i])    
+
+        plt.title(f"Test {test_range}{string}. Regresión logística.")
+        plt.xlabel("Valor épocas")
         plt.ylabel("Error")
 
 
