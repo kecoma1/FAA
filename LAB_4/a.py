@@ -5,7 +5,7 @@ from sklearn.linear_model import LinearRegression, SGDClassifier
 from sklearn.model_selection import cross_val_score
 from ClasificadorKNN import ClasificadorKNN
 from Distancias import distanciaEuclidea
-from Datos import Datos
+from Datos import Datos, normalizarDatos
 import MatrizConfusion as MC
 import utils
 
@@ -15,13 +15,15 @@ def warn(*args, **kwargs):
 import warnings
 warnings.warn = warn
 
-wdbc = Datos("ConjuntosDatos/wdbc__a.data")
-indians = Datos("ConjuntosDatos/pima-indians-diabetes__a.data")
+wdbc = Datos("ConjuntosDatos/wdbc.data")
+indians = Datos("ConjuntosDatos/pima-indians-diabetes.data")
 nums = Datos("ConjuntosDatos/nums.csv")
 ttt = Datos("ConjuntosDatos/tic-tac-toe.data")
 german = Datos("ConjuntosDatos/german.data")
 lent = Datos("ConjuntosDatos/lentillas.data")
 
+
+utils.plot_curva_ROC(wdbc, 1, 1000, 50)
 RL_conf = (1, 1000)
 KNN_conf = (11, distanciaEuclidea)
 utils.plot_espacio_ROC(wdbc, 2, 20, RL_conf, KNN_conf)

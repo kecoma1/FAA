@@ -281,9 +281,55 @@ def plot_espacio_ROC(dataset, times, porcentaje, RL_conf, KNN_conf):
     plt.scatter(X, Y)
     for i, label in enumerate(labels):
         ax,plt.annotate(label, (X[i], Y[i]))
+    ax.plot([0, 1], [0, 1], ls="--", c=".1")
 
     x_ticks = [0, 1]
     y_ticks = [0, 1]
     plt.xticks(x_ticks, x_ticks)
     plt.yticks(y_ticks, y_ticks)
-    plt.title(f"Espacio ROC.")
+    plt.xlabel("Sensibilidad o TPR")
+    plt.xlabel("Especifidad o FPR")
+    plt.title(f"Espacio ROC")
+
+
+def plot_curva_ROC(dataset, aprendizaje, epocas, porcentaje):
+    crl = ClasificadorRegresionLogistica(aprendizaje, epocas)
+
+    v = ValidacionSimple(porcentaje, 1)
+    v.creaParticiones(dataset.datos)
+    crl.entrenamiento(dataset.datos[v.particiones[0].indicesTrain], dataset.nominalAtributos, None)
+    tabla = crl.clasificaProbs(dataset.datos[v.particiones[0].indicesTest], dataset.nominalAtributos, None)
+
+    # Eliminamos los que no son ni TP ni FP (no influyen en la gráfica)
+    tabla_para_plot = []
+    for score, clase, vp, fp in tabla:
+        if vp or fp:
+            tabla_para_plot.append((score, clase, vp, fp))
+
+    tabla_para_plot = sorted(tabla_para_plot, key=lambda x: x[0], reverse=True)
+    X, Y = crea_coordenadas(tabla_para_plot)
+    plt.figure(figsize=(20,20))
+    plt.plot(X, Y)
+    plt.title(f"Curva ROC - Regresión logística - Cte. Aprendizaje = {aprendizaje}, épocas = {epocas}")
+
+
+def crea_coordenadas(tabla):
+    X, Y = [], []
+    x, y = 0, 0
+    for _, _, vp, fp in tabla:
+        if vp:
+            x += 1
+        elif fp:
+            y += 1
+        X.append(x)
+        Y.append(y)
+    return normaliza_coordenadas(X, Y)
+
+
+def normaliza_coordenadas(X, Y):
+    nX, nY = [], []
+    maxX, maxY = max(X), max(Y)
+    for x, y in zip(X, Y):
+        nX.append(x/maxX)
+        nY.append(y/maxY)
+    return nX, nY
