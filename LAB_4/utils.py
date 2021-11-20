@@ -276,7 +276,7 @@ def plot_espacio_ROC(dataset, times, porcentaje, RL_conf, KNN_conf):
     Y = [Y_RL, Y_KNN, Y_NB]
     labels = ["Regresion logistica", "K-NN", "Naive Bayes"]
 
-    plt.figure(figsize=(20,20))
+    plt.figure(figsize=(10,10))
     _, ax = plt.subplots()
     plt.scatter(X, Y)
     for i, label in enumerate(labels):
@@ -310,6 +310,8 @@ def plot_curva_ROC(dataset, aprendizaje, epocas, porcentaje):
     X, Y = crea_coordenadas(tabla_para_plot)
     plt.figure(figsize=(20,20))
     plt.plot(X, Y)
+    plt.xlabel("FPR")
+    plt.ylabel("TPR")
     plt.title(f"Curva ROC - Regresión logística - Cte. Aprendizaje = {aprendizaje}, épocas = {epocas}")
 
 
