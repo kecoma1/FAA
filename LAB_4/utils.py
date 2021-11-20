@@ -1,17 +1,19 @@
+from os import X_OK
+from Clasificador import ClasificadorNaiveBayes
 from ClasificadorRegresionLogistica import ClasificadorRegresionLogistica
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.linear_model import LogisticRegression, SGDClassifier
+from ClasificadorKNN import ClasificadorKNN
 import matplotlib.pyplot as plt
+import MatrizConfusion as mc
 import numpy as np
 
 
 RL_step_1 = 15
 RL_step_2 = 100
-RL_step_aprendizaje = 5 # LUEGO SE DIVIDE ENTRE 10
 RL_epoch_END_1 = 100
 RL_epoch_END_2 = 100 + RL_step_2
-RL_aprendizaje_END = 25 # LUEGO SE DIVIDE ENTRE 10
 
 ranges_test = [epoch for epoch in range(10, RL_epoch_END_1, RL_step_1)]
 for epoch in range(RL_step_2, RL_epoch_END_2, RL_step_2): ranges_test.append(epoch)
@@ -106,25 +108,26 @@ def plot_aprendizaje(data, epoch, vs_vc):
         plt.ylabel("Error")
 
 
-def plot_VS(datos, aprendizaje, vs_vc, labels):
+def plot_VS_all(datos, aprendizaje, vs_vc, labels):
     string = "%" if vs_vc else "K-Folds"
     plt.figure(figsize=(20,20))
     test_ranges = porcentajesTest if vs_vc else kFoldsTest
     for i, test_range in enumerate(test_ranges):
         plt.subplot(3, 2, i+1)
-        for i, data in enumerate(datos):
+        for n, data in enumerate(datos):
             X, Y = ([], [])
             for epoch, values in data.items():
                 X.append(epoch)
-                if "ogistic" in labels[i]:
+                if "ogistic" in labels[n]:
                     Y.append(values[i])
                 else:
                     Y.append(values[aprendizaje][i])
-            plt.plot(X, Y, label=labels[i])    
+            plt.plot(X, Y, label=labels[n])    
 
         plt.title(f"Test {test_range}{string}. Regresión logística.")
         plt.xlabel("Valor épocas")
         plt.ylabel("Error")
+        plt.legend()
 
 
 def avg_aprendizaje(data, epoch, aprendizaje):
@@ -230,3 +233,57 @@ def test_VS(X, y, times, testSize, model):
         yPred = model.predict(XTest)
         errores[i] = error(yTest, yPred)
     return np.mean(errores)
+
+
+def espacio_ROC_avg_RL(dataset, times, aprendizaje, epocas, porcentaje):
+    tpr_media = []
+    fpr_media = []
+    for _ in range(times):
+        crl = ClasificadorRegresionLogistica(aprendizaje, epocas)
+        tpr, fpr = mc.espacioROC(dataset, crl, porcentaje)
+        tpr_media.append(tpr)
+        fpr_media.append(fpr)
+    return sum(tpr_media)/len(tpr_media), sum(fpr_media)/len(fpr_media)
+
+
+def espacio_ROC_avg_KNN(dataset, times, K, func, porcentaje):
+    tpr_media = []
+    fpr_media = []
+    for _ in range(times):
+        cknn = ClasificadorKNN(K, func)
+        tpr, fpr = mc.espacioROC(dataset, cknn, porcentaje)
+        tpr_media.append(tpr)
+        fpr_media.append(fpr)
+    return sum(tpr_media)/len(tpr_media), sum(fpr_media)/len(fpr_media)
+
+
+def espacio_ROC_avg_NB(dataset, times, porcentaje):
+    tpr_media = []
+    fpr_media = []
+    for _ in range(times):
+        cnb = ClasificadorNaiveBayes()
+        tpr, fpr = mc.espacioROC(dataset, cnb, porcentaje)
+        tpr_media.append(tpr)
+        fpr_media.append(fpr)
+    return sum(tpr_media)/len(tpr_media), sum(fpr_media)/len(fpr_media)
+
+
+def plot_espacio_ROC(dataset, times, porcentaje, RL_conf, KNN_conf):
+    X_RL, Y_RL = espacio_ROC_avg_RL(dataset, times, RL_conf[0], RL_conf[1], porcentaje)
+    X_KNN, Y_KNN = espacio_ROC_avg_KNN(dataset, times, KNN_conf[0], KNN_conf[1], porcentaje)
+    X_NB, Y_NB = espacio_ROC_avg_NB(dataset, times, porcentaje)
+    X = [X_RL, X_KNN, X_NB]
+    Y = [Y_RL, Y_KNN, Y_NB]
+    labels = ["Regresion logistica", "K-NN", "Naive Bayes"]
+
+    plt.figure(figsize=(20,20))
+    _, ax = plt.subplots()
+    plt.scatter(X, Y)
+    for i, label in enumerate(labels):
+        ax,plt.annotate(label, (X[i], Y[i]))
+
+    x_ticks = [0, 1]
+    y_ticks = [0, 1]
+    plt.xticks(x_ticks, x_ticks)
+    plt.yticks(y_ticks, y_ticks)
+    plt.title(f"Espacio ROC.")

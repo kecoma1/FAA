@@ -2,6 +2,23 @@ from EstrategiaParticionado import ValidacionSimple
 import numpy as np
 
 
+def espacioROC(dataset, cl, porcentaje):
+    """Función para obtener la espacio ROC.
+    Los valores TPR y FPR se calculan varias veces y se obtiene
+    la media.
+
+    Args:
+        dataset (numpy.array): Array numpy con los datos.
+        cl_constructor (Clasificador): Constructor del clasificador.
+        porcentaje (int): Porcentaje destinado al test.
+
+    Returns:
+        tuple: Tupla con TPR y FPR.
+    """
+    vp, vn, fp, fn = matrizConfusionClasificador(dataset, cl, porcentaje)
+    return TPR(vp, fn), FPR(fp, vn)
+
+
 def matrizConfusionClasificador(dataset, cl, porcentaje):
     """Función para calcular la matriz de confusión
     dados unos datos y un clasificador.
@@ -238,6 +255,8 @@ def TPR(vp, fn):
     Returns:
             float: TPR.
     """
+    if vp+fn == 0:
+        return 0
     return vp/(vp+fn)
 
 
@@ -252,6 +271,8 @@ def FNR(fn, vp):
     Returns:
             float: FNR.
     """
+    if vp+fn == 0:
+        return 0
     return fn/(vp+fn)
 
 
@@ -266,6 +287,8 @@ def FPR(fp, vn):
     Returns:
             float: FPR.
     """
+    if vn+fp == 0:
+        return 1
     return fp/(vn+fp)
 
 
@@ -280,6 +303,8 @@ def TNR(vn, fp):
     Returns:
             float: FPR.
     """
+    if fp+vn == 0:
+        return 0
     return vn/(fp+vn)
 
 
