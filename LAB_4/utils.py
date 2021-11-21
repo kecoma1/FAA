@@ -13,7 +13,7 @@ import numpy as np
 RL_step_1 = 15
 RL_step_2 = 100
 RL_epoch_END_1 = 100
-RL_epoch_END_2 = 100 + RL_step_2
+RL_epoch_END_2 = 1000 + RL_step_2
 
 ranges_test = [epoch for epoch in range(10, RL_epoch_END_1, RL_step_1)]
 for epoch in range(RL_step_2, RL_epoch_END_2, RL_step_2): ranges_test.append(epoch)
