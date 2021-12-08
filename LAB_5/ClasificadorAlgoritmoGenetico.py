@@ -2,7 +2,7 @@ from random import randint, random, choice
 from Clasificador import Clasificador
 from itertools import accumulate
 from collections import Counter
-from enum import Enum
+from copy import copy
 import numpy as np
 import Datos
 
@@ -311,11 +311,29 @@ class AlgoritmoGenetico(Clasificador):
             self.individuos.append(self.Individuo(self.maxReglas, valorMaximoCadena))
 
     def evolucionPoblacion(self, datostrain):
+        individuosAMantener = int(self.poblacion * self.elitismo)
+        mejoresIndividuos = []
         for _ in range(self.generaciones):
             # Calculamos el fitness de cada individuo
             fitnesses = [individuo.fitness(datostrain) for individuo in self.individuos]
             totalFitness = sum(fitnesses) if sum(fitnesses) != 0 else 1
+
+            # Mantenemos los mejores de la anterior generación
+            peoresFitness = [(i, individuo.fitness(datostrain)) for i, individuo in enumerate(self.individuos)]
+            peoresFitness = sorted(peoresFitness, key=lambda x: x[1])
+            peoresFitness = peoresFitness[:individuosAMantener]
+            if len(mejoresIndividuos) != 0:
+                for  (iPeor, _), individuo in zip(peoresFitness, mejoresIndividuos):
+                    self.individuos[iPeor] = individuo
+                    fitnesses[iPeor] = individuo.fitnessValue
+            
             if self.show: print("Fitness más alto:", max(fitnesses))
+
+            # Elitismo
+            fitnessesIndizados = [(i, individuo.fitness(datostrain)) for i, individuo in enumerate(self.individuos)]
+            fitnessesIndizados = sorted(fitnessesIndizados, key=lambda x: x[1], reverse=True)
+            fitnessesIndizados = fitnessesIndizados[:individuosAMantener]
+            mejoresIndividuos = [copy(self.individuos[i]) for i, _ in fitnessesIndizados]
 
             # Calculamos la probabilidad de seleccion de cada individuo
             # en base al fitness total calculado
@@ -329,9 +347,6 @@ class AlgoritmoGenetico(Clasificador):
 
             # Mutamos la poblacion
             self.mutacion(self.longitudReglas, self.individuos, self.pm)
-
-            # Elitismo
-
 
     def ruleta(self, probs):
         """Método para obtener los progenitores (sus índices en la lista de individuos)

@@ -3,5 +3,5 @@ from Datos import Datos
 
 datos = Datos("lentillas.data")
 
-ag = AlgoritmoGenetico(10, 10, 5, 0,0,0)
-ag.entrenamiento(datos, datos.nominalAtributos, datos.diccionario)
+ag = AlgoritmoGenetico(20, 1000, 10, AlgoritmoGenetico.cruceInterReglas, AlgoritmoGenetico.mutacionReglas , 0.1, 0.1, show=True)
+ag.entrenamiento(datos.datos, datos.nominalAtributos, datos.diccionario)
