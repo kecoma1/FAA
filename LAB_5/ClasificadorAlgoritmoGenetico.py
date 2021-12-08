@@ -141,7 +141,7 @@ class AlgoritmoGenetico(Clasificador):
                 self.reglas = [
                     {"regla": [randint(0, longitud-1) for longitud in valorMaximoCadena],
                     "conclusion": randint(0, 1)}
-                    for _ in range(randint(1, maxReglas))
+                    for _ in range(randint(1, maxReglas-1))
                 ]
             else:
                 self.reglas = []
@@ -267,14 +267,16 @@ class AlgoritmoGenetico(Clasificador):
                 valorAEliminar = valorCadena & ( (todo1s) - ((2**longitudTotal)-1) )
                 valorCadena -= valorAEliminar
 
-    def __init__(self, poblacion, generaciones, maxReglas, cruce, mutacion=0, elitismo=0):
+    def __init__(self, poblacion, generaciones, maxReglas, cruce, mutacion, pm=0, elitismo=0, show=False):
         self.poblacion = poblacion
         self.generaciones = generaciones
         self.maxReglas = maxReglas
         self.cruce = cruce
         self.mutacion = mutacion
+        self.pm = pm
         self.elitismo = elitismo
         self.individuos = []
+        self.show = show
 
     def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
         # La longitud máxima de cada regla corresponde a una cadena de bits con
@@ -306,6 +308,7 @@ class AlgoritmoGenetico(Clasificador):
             # Calculamos el fitness de cada individuo
             fitnesses = [individuo.fitness(datostrain) for individuo in self.individuos]
             totalFitness = sum(fitnesses) if sum(fitnesses) != 0 else 1
+            if self.show: print("Fitness más alto:", max(fitnesses))
 
             # Calculamos la probabilidad de seleccion de cada individuo
             # en base al fitness total calculado
@@ -315,7 +318,13 @@ class AlgoritmoGenetico(Clasificador):
             indicesProgenitores = self.ruleta(probs)
 
             # Cruzamos los progenitores para obtener los vastagos
-            self.individuos = self.vastagos(indicesProgenitores)
+            self.individuos = self.vastagos(indicesProgenitores).copy()
+
+            # Mutamos la poblacion
+            self.mutacion(self.longitudReglas, self.individuos, self.pm)
+
+            # Elitismo
+            
 
     def ruleta(self, probs):
         """Método para obtener los progenitores (sus índices en la lista de individuos)
@@ -353,9 +362,11 @@ class AlgoritmoGenetico(Clasificador):
         for _ in range(len(probs)):
             resultado = random()
             for i, zona in enumerate(rule):
-                if resultado < zona:
+                if resultado <= zona:
                     indices.append(i)
                     break
+        if len(indices) == 0:
+            indices = [randint(0, len(probs)-1) for _ in range(len(probs))]
         return indices
 
     def vastagos(self, indicesProgenitores):
@@ -439,4 +450,74 @@ class AlgoritmoGenetico(Clasificador):
                 if B is None:
                     parejas.append((A, A))
         return parejas
+
+    @staticmethod
+    def mutacionEstandar(longitudReglas, individuos, pm):
+        """Método estático para aplicar una mutación estandar
+        a los individuos. Se elige una regla al azar y se cambia
+        un bit al azar.
+
+        Ejemplo:
+        Si tenemos el número 5 y queremos cambiar el bit en la
+        posición uno (101 | 010 -> 111) tenemos que tener en cuenta si
+        este bit es 0 o 1. Si es 0 hay que cambiarlo a 1 hay que 
+        usar un or con una cadena de bits con todo a 0s excepto el bit
+        a modificar. En el caso de que queramos cambiar de 1 a 0
+        (111 & 101 -> 101) Hay que crear una cadena identica a la original
+        exceptuando el bit a cambiar y después aplicar la puerta lógica and.
+
+        Args:
+            longitudReglas (list): Lista con lo que mide cada regla.
+            individuos (list): Individuos a los que aplicar la mutación.
+            pm (float): Probabilidad de mutación.
+        """
+        for individuo in individuos:
+            if random() <= pm:
+                reglaACambiar = randint(0, len(individuo.reglas)-1)
+                atributoACambiar = randint(0, len(individuo.reglas[reglaACambiar]["regla"]))
+                bitACambiar = randint(0, longitudReglas[atributoACambiar]-1)
+
+                # Cambiamos la conclusión
+                if bitACambiar == len(individuo.reglas[reglaACambiar]["regla"]):
+                    if individuo.reglas[reglaACambiar]["conclusion"] == 1:
+                        individuo.reglas[reglaACambiar]["conclusion"] = 0
+                    else:
+                        individuo.reglas[reglaACambiar]["conclusion"] = 1
+                else:
+                    valorRegla = individuo.reglas[reglaACambiar]["regla"][atributoACambiar]
+                    resultadoMutacion = valorRegla | (2**bitACambiar)
+                    if resultadoMutacion == valorRegla:
+                        resultadoMutacion = (valorRegla - (2**bitACambiar)) & valorRegla
+
+                # Aplicamos la mutacion
+                individuo.reglas[reglaACambiar]["regla"][atributoACambiar] = resultadoMutacion
+
+    @staticmethod
+    def mutacionReglas(longitudReglas, individuos, pm):
+        """Método estático para mutar las reglas
+        de los individuos en base a una probabilidad.
+
+        Args:
+            longitudReglas (list): Lista con la longitud de la cadena de
+            bits de cada regla.
+            individuos (list): Individuos a mutar.
+            pm (float): Probabilidad a mutar una regla (0-1].
+        """
+        for individuo in individuos:
+            for i, regla in enumerate(individuo.reglas):
+                for n, valor in enumerate(regla["regla"]):
+                    if random() <= pm:
+                        bitACambiar = randint(0, longitudReglas[n])
+                        resultadoMutacion = valor | (2**bitACambiar)
+                        if resultadoMutacion == valor:
+                            resultadoMutacion = (valor - (2**bitACambiar)) & valor
+
+                        # Actualizamos la regla
+                        individuo.reglas[i]["regla"][n] = resultadoMutacion
+                # Cambiamos la conclusión
+                if random() <= pm:
+                    if regla["conclusion"] == 1:
+                        regla["conclusion"] = 0
+                    else:
+                        regla["conclusion"] = 1
 
