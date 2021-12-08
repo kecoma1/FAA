@@ -48,19 +48,23 @@ class AlgoritmoGenetico(Clasificador):
         for i in range(0, puntoCruceA):
             newA.reglas.append({"regla": [], "conclusion": -1})
             newA.reglas[-1]["regla"] = A.reglas[i]["regla"]
+            newA.reglas[-1]["conclusion"] = A.reglas[i]["conclusion"]
 
         for i in range(puntoCruceB, len(B.reglas)):
             newA.reglas.append({"regla": [], "conclusion": -1})
             newA.reglas[-1]["regla"] = B.reglas[i]["regla"]
+            newA.reglas[-1]["conclusion"] = B.reglas[i]["conclusion"]
 
         # Cruzamos las reglas en B
         for i in range(0, puntoCruceB):
             newB.reglas.append({"regla": [], "conclusion": -1})
             newB.reglas[-1]["regla"] = B.reglas[i]["regla"]
+            newB.reglas[-1]["conclusion"] = B.reglas[i]["conclusion"]
 
         for i in range(puntoCruceA, len(A.reglas)):
             newB.reglas.append({"regla": [], "conclusion": -1})
             newB.reglas[-1]["regla"] = A.reglas[i]["regla"]
+            newB.reglas[-1]["conclusion"] = A.reglas[i]["conclusion"]
         return newA, newB
 
     @staticmethod
@@ -108,6 +112,9 @@ class AlgoritmoGenetico(Clasificador):
 
         newA.setRegla(newReglaValueA, longitudReglas, indiceReglaA)
         newB.setRegla(newReglaValueB, longitudReglas, indiceReglaB)
+
+        newA.reglas[indiceReglaA]["conclusion"] = B.reglas[indiceReglaB]["conclusion"]
+        newB.reglas[indiceReglaB]["conclusion"] = A.reglas[indiceReglaA]["conclusion"]
 
         return newA, newB
 
@@ -324,7 +331,7 @@ class AlgoritmoGenetico(Clasificador):
             self.mutacion(self.longitudReglas, self.individuos, self.pm)
 
             # Elitismo
-            
+
 
     def ruleta(self, probs):
         """Método para obtener los progenitores (sus índices en la lista de individuos)
