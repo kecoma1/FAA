@@ -216,8 +216,9 @@ class AlgoritmoGenetico(Clasificador):
                     del atributo.
             """
             if not empty:
-                self.reglas = [
-                    {"regla": [randint(0, longitud-1) for longitud in valorMaximoCadena],
+                self.reglas = [ # La llamada a randint es desde 1 hasta longitud-2 para
+                                # que no haya reglas con todo a 1s
+                    {"regla": [randint(1, longitud-2) if longitud-2 >= 1 else 1 for longitud in valorMaximoCadena],
                     "conclusion": randint(0, 1)}
                     for _ in range(randint(1, maxReglas-1))
                 ]
@@ -388,29 +389,30 @@ class AlgoritmoGenetico(Clasificador):
             print("Iteracion -", iteracion+1, end=" || ")
 
             # Calculamos el fitness de cada individuo
-            fitnesses = [individuo.fitness(datostrain) for individuo in self.individuos]
-
-            if len(mejoresIndividuos) != 0:
-                # Mantenemos los mejores de la anterior generación sustituyendolos por los mejores de la anterior
-                peoresFitness = [(i, individuo.fitness(datostrain)) for i, individuo in enumerate(self.individuos)]
-                peoresFitness = sorted(peoresFitness, key=lambda x: x[1])
-                peoresFitness = peoresFitness[:individuosAMantener]
-                for  (iPeor, _), individuo in zip(peoresFitness, mejoresIndividuos):
-                    self.individuos[iPeor] = individuo
-                    fitnesses[iPeor] = individuo.fitnessValue
-
-            # Elitismo
-            fitnessesIndizados = [(i, individuo.fitness(datostrain)) for i, individuo in enumerate(self.individuos)]
-            fitnessesIndizados = sorted(fitnessesIndizados, key=lambda x: x[1], reverse=True)
-            fitnessesIndizados = fitnessesIndizados[:individuosAMantener]
-            mejoresIndividuos = [copy(self.individuos[i]) for i, _ in fitnessesIndizados]
+            fitnesses = [individuo.fitness(datostrain) 
+                         if individuo.fitnessValue == -1 
+                         else individuo.fitnessValue 
+                         for individuo in self.individuos]
 
             if self.show: print("Fitness más alto:", max(fitnesses))
 
-            # De la lista fitnesses quitamos los índices que sean los mejores para no
-            # modificar estos individuos
-            for i, _ in fitnessesIndizados:
-                fitnesses[i] = 0
+            # Guardamos los fitness más altos
+            fitnessesIndizados = [(i, fitness) for i, fitness in enumerate(fitnesses)] 
+
+            # Ordenamos por fitness los fitnesses
+            fitnessesIndizadosOrdenados = sorted(fitnessesIndizados, key=lambda x: x[1], reverse=True)
+
+            # Guardamos los indices de los mejores individuos
+            mejoresIndividuosIndices = [i for i, _ in fitnessesIndizadosOrdenados[:individuosAMantener]]
+            mejoresIndividuosIndices = sorted(mejoresIndividuosIndices, reverse=True) 
+
+            # Guardamos los mejores individuos
+            mejoresIndividuos = [copy(self.individuos[i]) for i in mejoresIndividuosIndices]
+
+            # Borramos de la lista de individuos los mejores para no modificarlos
+            for i in mejoresIndividuosIndices:
+                del self.individuos[i]
+                del fitnesses[i]
 
             # Calculamos la probabilidad de seleccion de cada individuo
             # en base al fitness total calculado
@@ -425,6 +427,10 @@ class AlgoritmoGenetico(Clasificador):
 
             # Mutamos la poblacion
             self.mutacion(self.longitudReglas, self.individuos, self.pm)
+
+            # Volvemos a añadir a los mejores
+            for individuo in mejoresIndividuos:
+                self.individuos.append(individuo)
 
     def ruleta(self, probs):
         """Método para obtener los progenitores (sus índices en la lista de individuos)
@@ -459,14 +465,14 @@ class AlgoritmoGenetico(Clasificador):
         # Dados los resultados vemos cuantas veces la bola
         # ha caido en cada lugar
         indices = []
-        for _ in range(self.poblacion):
+        for _ in range(len(probs)):
             resultado = random()
             for i, zona in enumerate(rule):
                 if resultado <= zona:
                     indices.append(i)
                     break
         if len(indices) == 0:
-            indices = [randint(0, self.poblacion-1) for _ in range(self.poblacion)]
+            indices = [randint(0, len(probs)-1) for _ in range(len(probs))]
         return indices
 
     def vastagos(self, indicesProgenitores):
@@ -553,7 +559,7 @@ class AlgoritmoGenetico(Clasificador):
         # Si la lista de parejas no contiene todas las necesarias
         # lo que hacemos es repetir las parejas (se reproducen varias veces)
         i = 0
-        while len(parejas) < (self.poblacion/2):
+        while len(parejas) < (len(indicesProgenitores)/2):
             parejas.append(parejas[i])
             i = (i+1) % self.poblacion
         return parejas
