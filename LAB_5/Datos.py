@@ -5,7 +5,7 @@ import numpy as np
 
 class Datos:
 
-    def __init__(self, nombreFichero):
+    def __init__(self, nombreFichero, allNominal=False):
         """Constructor de la clase datos.
 
         Args:
@@ -19,7 +19,10 @@ class Datos:
         df = pd.read_csv(nombreFichero, dtype={'Class': object})
 
         # Construimos la lista nominal atributos
-        self.asignaNominalAtributos(df.dtypes)
+        if allNominal:
+            self.nominalAtributos = [True for _ in df.dtypes]
+        else:
+            self.asignaNominalAtributos(df.dtypes)
 
         # Construimos el diccionario
         self.construyeDiccionario(df)
@@ -27,7 +30,7 @@ class Datos:
         # Construimos y traducimos el array de datos
         self.construyeDatos(df)
 
-        
+
     # Devuelve el subconjunto de los datos cuyos �ndices se pasan como argumento
     def extraeDatos(self,idx):
         datos = np.zeros(shape=(len(idx), self.datos.shape[1]))

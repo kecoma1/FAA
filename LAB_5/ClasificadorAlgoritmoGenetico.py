@@ -42,8 +42,8 @@ class AlgoritmoGenetico(Clasificador):
         puntoCruceA = 1 if len(A.reglas) == 1 else randint(1, len(A.reglas)-1)
         puntoCruceB = 1 if len(B.reglas) == 1 else randint(1, len(B.reglas)-1)
 
-        newA = AlgoritmoGenetico.Individuo(0, 0, empty=True)
-        newB = AlgoritmoGenetico.Individuo(0, 0, empty=True)
+        newA = AlgoritmoGenetico.Individuo(0, 0, A.priori, empty=True)
+        newB = AlgoritmoGenetico.Individuo(0, 0, B.priori, empty=True)
 
         # Cruzamos las reglas en A
         for i in range(0, puntoCruceA):
@@ -90,8 +90,8 @@ class AlgoritmoGenetico(Clasificador):
         segundaMitad = (2**puntoCruce)-1
         primeraMitad = ((2**longitudReglasTotal)-1)-segundaMitad
 
-        newA = AlgoritmoGenetico.Individuo(0, 0, empty=True)
-        newB = AlgoritmoGenetico.Individuo(0, 0, empty=True)
+        newA = AlgoritmoGenetico.Individuo(0, 0, A.priori, empty=True)
+        newB = AlgoritmoGenetico.Individuo(0, 0, B.priori, empty=True)
 
         newA.reglas = A.reglas.copy()
         newB.reglas = B.reglas.copy()
@@ -141,9 +141,15 @@ class AlgoritmoGenetico(Clasificador):
         """
         for individuo in individuos:
             if random() <= pm:
-                reglaACambiar = randint(0, len(individuo.reglas)-1)
-                atributoACambiar = randint(0, len(individuo.reglas[reglaACambiar]["regla"]))
-                bitACambiar = randint(0, longitudReglas[atributoACambiar]-1)
+                reglaACambiar = randint(0, len(individuo.reglas)-1
+                                           if len(individuo.reglas)-1 == -1
+                                           else 0)
+                atributoACambiar = randint(0, len(individuo.reglas[reglaACambiar]["regla"])-1 
+                                              if len(individuo.reglas[reglaACambiar]["regla"])-1 == -1 
+                                              else 0)
+                bitACambiar = randint(0, longitudReglas[atributoACambiar]-1
+                                         if longitudReglas[atributoACambiar]-1 == -1
+                                         else 0)
 
                 # Cambiamos la conclusión
                 if bitACambiar == len(individuo.reglas[reglaACambiar]["regla"]):
@@ -157,8 +163,8 @@ class AlgoritmoGenetico(Clasificador):
                     if resultadoMutacion == valorRegla:
                         resultadoMutacion = (valorRegla - (2**bitACambiar)) & valorRegla
 
-                # Aplicamos la mutacion
-                individuo.reglas[reglaACambiar]["regla"][atributoACambiar] = resultadoMutacion
+                    # Aplicamos la mutacion
+                    individuo.reglas[reglaACambiar]["regla"][atributoACambiar] = resultadoMutacion
 
     @staticmethod
     def mutacionReglas(longitudReglas, individuos, pm):
@@ -206,7 +212,7 @@ class AlgoritmoGenetico(Clasificador):
         ]
         """
 
-        def __init__(self, maxReglas, valorMaximoCadena, empty=False):
+        def __init__(self, maxReglas, valorMaximoCadena, priori, empty=False):
             """Constructor.
 
             Args:
@@ -214,17 +220,19 @@ class AlgoritmoGenetico(Clasificador):
                     valorMaximoCadena (list): Lista con el valor máximo que se puede
                     alcanzar con la cadena de bits que representa los posibles valores
                     del atributo.
+                    priori (int): Priori del dataset.
             """
             if not empty:
                 self.reglas = [ # La llamada a randint es desde 1 hasta longitud-2 para
                                 # que no haya reglas con todo a 1s
                     {"regla": [randint(1, longitud-2) if longitud-2 >= 1 else 1 for longitud in valorMaximoCadena],
                     "conclusion": randint(0, 1)}
-                    for _ in range(randint(1, maxReglas-1))
+                    for _ in range(randint(1, maxReglas-1) if maxReglas > 1 else 1)
                 ]
             else:
                 self.reglas = []
             self.fitnessValue = -1
+            self.priori = priori
 
         def fitness(self, dataset):
             """Método para calcular el fitness de un individuo.
@@ -249,12 +257,10 @@ class AlgoritmoGenetico(Clasificador):
             Returns:
                 int: Conclusión mayoritaria.
             """
-            #conclusiones = [regla["conclusion"] if self.aplicaRegla(dato, regla) else 1 # TODO
-            #                for regla in self.reglas]
             conclusiones = [regla["conclusion"] for regla in self.reglas 
                             if self.aplicaRegla(dato, regla)]
             if len(conclusiones) == 0:
-                return 0 # TODO
+                return self.priori
             else:
                 return Counter(conclusiones).most_common(1)[0][0]
 
@@ -355,9 +361,15 @@ class AlgoritmoGenetico(Clasificador):
         self.pm = pm
         self.elitismo = elitismo
         self.individuos = []
+        self.mejorIndividuo = None
         self.show = show
 
     def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
+        clases, freqs = np.unique(datostrain[:,-1], return_counts=True)
+        self.priori = int(sorted([(clase, freq) for clase, freq in zip(clases, freqs)], 
+                            key=lambda x: x[1], 
+                            reverse=True)[0][0])
+
         # La longitud máxima de cada regla corresponde a una cadena de bits con
         # todos sus valores a 1. Ejemplo: 3 posibles valores -> 111 = 7.
         # Lo que se hace es restar 1 al valor de la cadena con el bit más alto. 
@@ -369,7 +381,7 @@ class AlgoritmoGenetico(Clasificador):
         self.evolucionPoblacion(datostrain)
 
     def clasifica(self, datosTest, nominalAtributos, diccionario):
-        return super().clasifica(datosTest, nominalAtributos, diccionario)
+        return [self.mejorIndividuo.conclusion(dato) for dato in datosTest], []
 
     def inicializarPoblacion(self, valorMaximoCadena):
         """Método para inicializar la población.
@@ -380,13 +392,13 @@ class AlgoritmoGenetico(Clasificador):
             del atributo.
         """
         for _ in range(self.poblacion):
-            self.individuos.append(self.Individuo(self.maxReglas, valorMaximoCadena))
+            self.individuos.append(self.Individuo(self.maxReglas, valorMaximoCadena, self.priori))
 
     def evolucionPoblacion(self, datostrain):
         individuosAMantener = int(self.poblacion * self.elitismo)
         mejoresIndividuos = [] # Lista con los mejores individuos de la anterior generación
         for iteracion in range(self.generaciones):
-            print("Iteracion -", iteracion+1, end=" || ")
+            print("Iteracion -", iteracion+1, end="\t||\t")
 
             # Calculamos el fitness de cada individuo
             fitnesses = [individuo.fitness(datostrain) 
@@ -396,18 +408,8 @@ class AlgoritmoGenetico(Clasificador):
 
             if self.show: print("Fitness más alto:", max(fitnesses))
 
-            # Guardamos los fitness más altos
-            fitnessesIndizados = [(i, fitness) for i, fitness in enumerate(fitnesses)] 
-
-            # Ordenamos por fitness los fitnesses
-            fitnessesIndizadosOrdenados = sorted(fitnessesIndizados, key=lambda x: x[1], reverse=True)
-
-            # Guardamos los indices de los mejores individuos
-            mejoresIndividuosIndices = [i for i, _ in fitnessesIndizadosOrdenados[:individuosAMantener]]
-            mejoresIndividuosIndices = sorted(mejoresIndividuosIndices, reverse=True) 
-
-            # Guardamos los mejores individuos
-            mejoresIndividuos = [copy(self.individuos[i]) for i in mejoresIndividuosIndices]
+            # Aplicamos elitismo
+            mejoresIndividuos, mejoresIndividuosIndices =  self.mejoresIndividuos(fitnesses, individuosAMantener)
 
             # Borramos de la lista de individuos los mejores para no modificarlos
             for i in mejoresIndividuosIndices:
@@ -431,6 +433,15 @@ class AlgoritmoGenetico(Clasificador):
             # Volvemos a añadir a los mejores
             for individuo in mejoresIndividuos:
                 self.individuos.append(individuo)
+
+        # Guardamos el mejor individuo
+        fitnesses = [individuo.fitness(datostrain) 
+                        if individuo.fitnessValue == -1 
+                        else individuo.fitnessValue 
+                        for individuo in self.individuos]
+        self.mejorIndividuo, _ =  self.mejoresIndividuos(fitnesses, 1)
+        self.mejorIndividuo = self.mejorIndividuo[0]
+
 
     def ruleta(self, probs):
         """Método para obtener los progenitores (sus índices en la lista de individuos)
@@ -563,3 +574,30 @@ class AlgoritmoGenetico(Clasificador):
             parejas.append(parejas[i])
             i = (i+1) % self.poblacion
         return parejas
+
+    def mejoresIndividuos(self, fitnesses, individuosAMantener):
+        """Método para guardar los mejores individuos.
+
+        Args:
+            fitnesses (list): Lista con el fitness de cada individuo.
+            individuosAMantener (int): Número de individuos a mantener.
+
+        Returns:
+            tuple: Lista con los mejores individuos, indices con los mejores individuos.
+        """
+        if individuosAMantener == 0: return [], []
+
+        # Guardamos los fitness más altos (elitismo)
+        fitnessesIndizados = [(i, fitness) for i, fitness in enumerate(fitnesses)] 
+
+        # Ordenamos por fitness los fitnesses 
+        fitnessesIndizadosOrdenados = sorted(fitnessesIndizados, key=lambda x: x[1], reverse=True)
+
+        # Guardamos los indices de los mejores individuos
+        mejoresIndividuosIndices = [i for i, _ in fitnessesIndizadosOrdenados[:individuosAMantener]]
+        mejoresIndividuosIndices = sorted(mejoresIndividuosIndices, reverse=True) 
+
+        # Guardamos los mejores individuos
+        mejoresIndividuos = [copy(self.individuos[i]) for i in mejoresIndividuosIndices]
+        return mejoresIndividuos, mejoresIndividuosIndices
+
