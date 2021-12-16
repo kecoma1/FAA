@@ -147,8 +147,9 @@ class AlgoritmoGenetico(Clasificador):
                 atributoACambiar = randint(0, len(individuo.reglas[reglaACambiar]["regla"])-1 
                                               if len(individuo.reglas[reglaACambiar]["regla"])-1 == -1 
                                               else 0)
+
                 bitACambiar = randint(0, longitudReglas[atributoACambiar]-1
-                                         if longitudReglas[atributoACambiar]-1 == -1
+                                         if longitudReglas[atributoACambiar]-1 != -1
                                          else 0)
 
                 # Cambiamos la conclusión
@@ -171,6 +172,10 @@ class AlgoritmoGenetico(Clasificador):
         """Método estático para mutar las reglas
         de los individuos en base a una probabilidad.
 
+        Lo que se hace en esta función es recorrer bit a bit cada cadena
+        de la regla y en base a la probabilidad de mutación, cambiar el bit
+        correspondiente.
+
         Args:
             longitudReglas (list): Lista con la longitud de la cadena de
             bits de cada regla.
@@ -183,6 +188,8 @@ class AlgoritmoGenetico(Clasificador):
                     if random() <= pm:
                         bitACambiar = randint(0, longitudReglas[n])
                         resultadoMutacion = valor | (2**bitACambiar)
+
+                        # Al aplicar OR nada cambio, hay que aplicar &
                         if resultadoMutacion == valor:
                             resultadoMutacion = (valor - (2**bitACambiar)) & valor
 
@@ -364,7 +371,7 @@ class AlgoritmoGenetico(Clasificador):
         self.mejorIndividuo = None
         self.show = show
 
-    def entrenamiento(self, datostrain, atributosDiscretos, diccionario):
+    def entrenamiento(self, datostrain, atributosDiscretos, diccionario, fitnessData=None):
         clases, freqs = np.unique(datostrain[:,-1], return_counts=True)
         self.priori = int(sorted([(clase, freq) for clase, freq in zip(clases, freqs)], 
                             key=lambda x: x[1], 
@@ -378,7 +385,7 @@ class AlgoritmoGenetico(Clasificador):
         self.longitudReglas = [len(atr) for atr in diccionario.values()]
         self.inicializarPoblacion(valorMaximoCadena)
 
-        self.evolucionPoblacion(datostrain)
+        self.evolucionPoblacion(datostrain, fitnessData=fitnessData)
 
     def clasifica(self, datosTest, nominalAtributos, diccionario):
         return [self.mejorIndividuo.conclusion(dato) for dato in datosTest], []
@@ -394,11 +401,18 @@ class AlgoritmoGenetico(Clasificador):
         for _ in range(self.poblacion):
             self.individuos.append(self.Individuo(self.maxReglas, valorMaximoCadena, self.priori))
 
-    def evolucionPoblacion(self, datostrain):
+    def evolucionPoblacion(self, datostrain, fitnessData=None):
+        """Método en el que se evoluciona a la población.
+
+        Args:
+            datostrain (numpy.array): Datos a usar para evolucionar a la población..
+            fitnessData (list, optional): Lista donde se van a guardar los fitness máximos 
+            y la media en cada generación. Por defecto None.
+        """
         individuosAMantener = int(self.poblacion * self.elitismo)
-        mejoresIndividuos = [] # Lista con los mejores individuos de la anterior generación
+        mejoresIndividuos = None # Lista con los mejores individuos de la anterior generación
         for iteracion in range(self.generaciones):
-            print("Iteracion -", iteracion+1, end="\t||\t")
+            if self.show: print("Iteracion -", iteracion+1, end="\t||\t")
 
             # Calculamos el fitness de cada individuo
             fitnesses = [individuo.fitness(datostrain) 
@@ -406,15 +420,28 @@ class AlgoritmoGenetico(Clasificador):
                          else individuo.fitnessValue 
                          for individuo in self.individuos]
 
-            if self.show: print("Fitness más alto:", max(fitnesses))
+            # Borramos a los peores y metemos a los mejores de la anterior generación
+            if mejoresIndividuos is not None:
+                peores = sorted(fitnessesIndizadosOrdenados, key=lambda x: x[1])[:(individuosAMantener)]
+                peores = sorted(peores, key=lambda x: x[0], reverse=True) # Para borrar sin problemas
+
+                # Quitamos a los peores
+                for indice, _ in peores:
+                    del self.individuos[indice]
+
+                # Metemos a los mejores
+                for mejor in mejoresIndividuos:
+                    self.individuos.append(mejor)
+
+                # Actualizamos la lista de fitness (ya están calculados los fitness)
+                fitnesses = [individuo.fitnessValue for individuo in self.individuos]
+
+            maxFitness = max(fitnesses)
+            if fitnessData is not None: fitnessData.append((maxFitness, sum(fitnesses)/len(fitnesses)))
+            if self.show: print("Fitness más alto:", maxFitness)
 
             # Aplicamos elitismo
-            mejoresIndividuos, mejoresIndividuosIndices =  self.mejoresIndividuos(fitnesses, individuosAMantener)
-
-            # Borramos de la lista de individuos los mejores para no modificarlos
-            for i in mejoresIndividuosIndices:
-                del self.individuos[i]
-                del fitnesses[i]
+            mejoresIndividuos, fitnessesIndizadosOrdenados =  self.mejoresIndividuos(fitnesses, individuosAMantener)
 
             # Calculamos la probabilidad de seleccion de cada individuo
             # en base al fitness total calculado
@@ -429,10 +456,6 @@ class AlgoritmoGenetico(Clasificador):
 
             # Mutamos la poblacion
             self.mutacion(self.longitudReglas, self.individuos, self.pm)
-
-            # Volvemos a añadir a los mejores
-            for individuo in mejoresIndividuos:
-                self.individuos.append(individuo)
 
         # Guardamos el mejor individuo
         fitnesses = [individuo.fitness(datostrain) 
@@ -599,5 +622,5 @@ class AlgoritmoGenetico(Clasificador):
 
         # Guardamos los mejores individuos
         mejoresIndividuos = [copy(self.individuos[i]) for i in mejoresIndividuosIndices]
-        return mejoresIndividuos, mejoresIndividuosIndices
+        return mejoresIndividuos, fitnessesIndizadosOrdenados
 
