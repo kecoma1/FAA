@@ -641,6 +641,7 @@ class AlgoritmoGenetico(Clasificador):
         string = "[REGLA "+str(indice+1)+"] - IF "
         attrNames = list(diccionario.keys())
         attrValues = list(diccionario.values())
+        class_values = list(attrValues[-1].keys())
 
         for i, r in enumerate(regla['regla']):
             if r != 0:
@@ -662,7 +663,7 @@ class AlgoritmoGenetico(Clasificador):
                     string = string[:-1*len(attrNames[i]+"=("):]
                 if len(string) != start_len:
                     string += ')'
-        string += " THEN concl="+str(regla["conclusion"])
+        string += " THEN concl="+str(class_values[int(regla["conclusion"])])
 
         return string
 

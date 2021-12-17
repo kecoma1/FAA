@@ -5,8 +5,8 @@ import MatrizConfusion as mc
 import matplotlib.pyplot as plt
 
 porcentajesTest = [20]
-poblaciones = [50, 150]
-generaciones = [100, 200]
+poblaciones = [20, 30] # [50, 150]
+generaciones = [10, 30] # [100, 200]
 MAXREGLAS = 5
 
 def AG_test(ttt, titanic, cruce, mutacion):
@@ -64,11 +64,35 @@ def plot(data, nombreData, cruce, mutacion):
     plt.title("Fitness medio en "+nombreData)
 
 def plot_poblacion(data):
+    x_titles = ["Poblacion="+str(p) for p in poblaciones]
     x = poblaciones
+    ys = []
     for poblacion in x:
+        p_l = []
         for dato in data:
-            y = dato[x]
+            for v in dato[poblacion].values():
+                p_l.append(v[0])
+        ys.append(p_l)
 
+    for i, vals in enumerate(ys):
+        ys[i] = sum(vals)/len(vals)
+    plt.figure(figsize=(10,10))
+    plt.bar(x_titles, ys)
+    plt.ylabel("Error medio")
+
+def plot_comp(datos1, datos2, x_titles):
+    y1, y2 = 0, 0
+    y_l = 0
+    for values1, values2 in zip(datos1, datos2):
+        for vs1, vs2 in zip(values1.values(), values2.values()):
+            for v1, v2 in zip(vs1.values(), vs2.values()):
+                y1 += v1[0]
+                y2 += v2[0]
+                y_l += 1
+    y1, y2 = y1/y_l, y2/y_l
+    plt.figure(figsize=(10,10))
+    plt.bar(x_titles, [y1, y2])
+    plt.ylabel("Error medio")
 
 def espacio_ROC_avg_AG(dataset, times, cruce, mutacion, porcentaje):
     tpr_media = []
