@@ -22,14 +22,13 @@ def AG_test(ttt, titanic, cruce, mutacion):
                 errorMedioTTT[poblacion][generacion].append(mediaTTT)
                 errorMedioTITANIC[poblacion][generacion].append(mediaTITANIC)
                 print(f"Test Poblacion={poblacion} Generaciones={generacion}\tTic-Tac-Toe - Error={mediaTTT:2f}\t\tTitanic - Error={mediaTITANIC:2f}")
-                print("\n[Tic-Tac-Toe] reglas del mejor individuo_ ", TTT_reglas_str)
-                print("[Titanic] reglas del mejor individuo_ ", TITANIC_reglas_str)
+                print("\n[Tic-Tac-Toe] reglas del mejor individuo:\n", TTT_reglas_str)
+                print("[Titanic] reglas del mejor individuo:\n", TITANIC_reglas_str)
 
     return errorMedioTTT, errorMedioTITANIC
 
 
 def AG_test_generacion_poblaciones(cruce, mutacion, generacion, poblacion, dataset, particionado):
-    print(MAXREGLAS)
     ag = AlgoritmoGenetico(poblacion, generacion, MAXREGLAS, cruce, mutacion, 0.05, 0.05)
     r = ag.validacion(particionado, dataset, ag)[0]
     reglas_str = ag.reglasMejor(dataset.diccionario)

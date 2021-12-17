@@ -24,7 +24,7 @@ class AlgoritmoGenetico(Clasificador):
     """
 
     @staticmethod
-    def cruceInterReglas(A, B, _):
+    def cruceInterReglas(A, B, _, maxReglas):
         """Método estático para cruzar 2 individuos 
         sustituyendo reglas enteras.
 
@@ -32,6 +32,7 @@ class AlgoritmoGenetico(Clasificador):
             A (Individuo)
             B (Individuo)
             _ : Parametro no necesario
+            maxReglas (int): Número máximo de reglas.
 
         Returns:
             tuple: Nuevo individuo A y nuevo individuo B
@@ -67,11 +68,16 @@ class AlgoritmoGenetico(Clasificador):
             newB.reglas[-1]["regla"] = A.reglas[i]["regla"]
             newB.reglas[-1]["conclusion"] = A.reglas[i]["conclusion"]
 
-        print(len(newB.reglas))
+        if len(newA.reglas) > maxReglas:
+            for _ in range(len(newA.reglas)-maxReglas):
+                del newA.reglas[-1]
+        if len(newB.reglas) > maxReglas:
+            for _ in range(len(newB.reglas)-maxReglas):
+                del newB.reglas[-1]
         return newA, newB
 
     @staticmethod
-    def cruceIntraReglas(A, B, longitudReglas):
+    def cruceIntraReglas(A, B, longitudReglas, maxReglas):
         """Método estático para cruzar 2 individuos
         sustituyendo partes de una regla.
 
@@ -80,6 +86,7 @@ class AlgoritmoGenetico(Clasificador):
             B (Individuo)
             longitudReglas (list): Lista con la longitud en
             bits de cada regla.
+            maxReglas (int): Número máximo de reglas.
 
         Returns:
             tuple: Nuevo individuo A y nuevo individuo B.
@@ -522,7 +529,7 @@ class AlgoritmoGenetico(Clasificador):
         pairs = self.parejas(indicesProgenitores)
 
         for A, B in pairs:
-            newA, newB = self.cruce(self.individuos[A], self.individuos[B], self.longitudReglas)
+            newA, newB = self.cruce(self.individuos[A], self.individuos[B], self.longitudReglas, self.maxReglas)
             newIndividuos.append(newA)
 
             # Si tenemos un número impar de individuos 
@@ -637,18 +644,24 @@ class AlgoritmoGenetico(Clasificador):
 
         for i, r in enumerate(regla['regla']):
             if r != 0:
+                start_len = len(string)
                 if string[-2:] == "()":
                     string = string[:-2]
-                string += "(" if string[-1] != "(" and string[-1] != ")" else " AND ("
+                if attrNames[i] == "Class":
+                    break
+                string += attrNames[i]+"=(" if string[-1] != "(" and string[-1] != ")" and string[-1] != "=" else " AND "+attrNames[i]+"=("
                 for v, value in attrValues[i].items():
                     if 2**value & r == 2**value:
-                        string += attrNames[i]+"="+str(v)
+                        string += str(v)
                     if string[-1] != '(' and string[-3:] != "OR ":
                         string += " OR "
 
                 if string[-4:] == " OR ":
                     string = string[:-4]
-                string += ')'
+                elif string[-1*len(attrNames[i]+"=("):] == attrNames[i]+"=(":
+                    string = string[:-1*len(attrNames[i]+"=("):]
+                if len(string) != start_len:
+                    string += ')'
         string += " THEN concl="+str(regla["conclusion"])
 
         return string
