@@ -259,7 +259,7 @@ class AlgoritmoGenetico(Clasificador):
             Returns:
                 float: Valor del fitness (entre [0-1]).
             """
-            aciertos = sum([1 for dato in dataset if self.conclusion(dato)])
+            aciertos = sum([1 for dato in dataset if self.conclusion(dato) == dato[-1]])
             self.fitnessValue = aciertos/dataset.shape[0]
             return self.fitnessValue
 
