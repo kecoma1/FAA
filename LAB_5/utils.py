@@ -5,8 +5,8 @@ import MatrizConfusion as mc
 import matplotlib.pyplot as plt
 
 porcentajesTest = [20]
-poblaciones = [20, 30] # [50, 150]
-generaciones = [10, 30] # [100, 200]
+poblaciones = [50, 150]
+generaciones = [100, 200]
 MAXREGLAS = 5
 
 def AG_test(ttt, titanic, cruce, mutacion):
