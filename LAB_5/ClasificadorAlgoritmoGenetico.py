@@ -66,6 +66,8 @@ class AlgoritmoGenetico(Clasificador):
             newB.reglas.append({"regla": [], "conclusion": -1})
             newB.reglas[-1]["regla"] = A.reglas[i]["regla"]
             newB.reglas[-1]["conclusion"] = A.reglas[i]["conclusion"]
+
+        print(len(newB.reglas))
         return newA, newB
 
     @staticmethod
@@ -144,8 +146,8 @@ class AlgoritmoGenetico(Clasificador):
                 reglaACambiar = randint(0, len(individuo.reglas)-1
                                            if len(individuo.reglas)-1 == -1
                                            else 0)
-                atributoACambiar = randint(0, len(individuo.reglas[reglaACambiar]["regla"])-1 
-                                              if len(individuo.reglas[reglaACambiar]["regla"])-1 == -1 
+                atributoACambiar = randint(0, len(individuo.reglas[reglaACambiar]["regla"]) 
+                                              if len(individuo.reglas[reglaACambiar]["regla"]) == -1 
                                               else 0)
 
                 bitACambiar = randint(0, longitudReglas[atributoACambiar]-1
@@ -234,7 +236,7 @@ class AlgoritmoGenetico(Clasificador):
                                 # que no haya reglas con todo a 1s
                     {"regla": [randint(1, longitud-2) if longitud-2 >= 1 else 1 for longitud in valorMaximoCadena],
                     "conclusion": randint(0, 1)}
-                    for _ in range(randint(1, maxReglas-1) if maxReglas > 1 else 1)
+                    for _ in range(randint(1, maxReglas-1) if maxReglas > 1 else range(1))
                 ]
             else:
                 self.reglas = []
@@ -457,11 +459,6 @@ class AlgoritmoGenetico(Clasificador):
             # Mutamos la poblacion
             self.mutacion(self.longitudReglas, self.individuos, self.pm)
 
-        # Guardamos el mejor individuo
-        fitnesses = [individuo.fitness(datostrain) 
-                        if individuo.fitnessValue == -1 
-                        else individuo.fitnessValue 
-                        for individuo in self.individuos]
         self.mejorIndividuo, _ =  self.mejoresIndividuos(fitnesses, 1)
         self.mejorIndividuo = self.mejorIndividuo[0]
 
@@ -623,4 +620,37 @@ class AlgoritmoGenetico(Clasificador):
         # Guardamos los mejores individuos
         mejoresIndividuos = [copy(self.individuos[i]) for i in mejoresIndividuosIndices]
         return mejoresIndividuos, fitnessesIndizadosOrdenados
+
+    def reglasMejor(self, diccionario):
+        string = ""
+        if self.mejorIndividuo is None:
+            return string
+
+        for i, regla in enumerate(self.mejorIndividuo.reglas):
+            string += self.reglaStr(i, regla, diccionario)+"\n"
+        return string
+
+    def reglaStr(self, indice, regla, diccionario):
+        string = "[REGLA "+str(indice+1)+"] - IF "
+        attrNames = list(diccionario.keys())
+        attrValues = list(diccionario.values())
+
+        for i, r in enumerate(regla['regla']):
+            if r != 0:
+                if string[-2:] == "()":
+                    string = string[:-2]
+                string += "(" if string[-1] != "(" and string[-1] != ")" else " AND ("
+                for v, value in attrValues[i].items():
+                    if 2**value & r == 2**value:
+                        string += attrNames[i]+"="+str(v)
+                    if string[-1] != '(' and string[-3:] != "OR ":
+                        string += " OR "
+
+                if string[-4:] == " OR ":
+                    string = string[:-4]
+                string += ')'
+        string += " THEN concl="+str(regla["conclusion"])
+
+        return string
+
 

@@ -17,20 +17,23 @@ def AG_test(ttt, titanic, cruce, mutacion):
         for generacion in generaciones:
             for porcentaje in porcentajesTest:
                 VS = ValidacionSimple(porcentaje, 1)
-
-                mediaTTT = AG_test_generacion_poblaciones(cruce, mutacion, poblacion, generacion, ttt, VS)
-                mediaTITANIC = AG_test_generacion_poblaciones(cruce, mutacion, poblacion, generacion, titanic, VS)
-
+                mediaTTT, TTT_reglas_str = AG_test_generacion_poblaciones(cruce, mutacion, poblacion, generacion, ttt, VS)
+                mediaTITANIC, TITANIC_reglas_str = AG_test_generacion_poblaciones(cruce, mutacion, poblacion, generacion, titanic, VS)
                 errorMedioTTT[poblacion][generacion].append(mediaTTT)
                 errorMedioTITANIC[poblacion][generacion].append(mediaTITANIC)
                 print(f"Test Poblacion={poblacion} Generaciones={generacion}\tTic-Tac-Toe - Error={mediaTTT:2f}\t\tTitanic - Error={mediaTITANIC:2f}")
-                
+                print("\n[Tic-Tac-Toe] reglas del mejor individuo_ ", TTT_reglas_str)
+                print("[Titanic] reglas del mejor individuo_ ", TITANIC_reglas_str)
+
     return errorMedioTTT, errorMedioTITANIC
 
 
 def AG_test_generacion_poblaciones(cruce, mutacion, generacion, poblacion, dataset, particionado):
-    crl = AlgoritmoGenetico(poblacion, generacion, MAXREGLAS, cruce, mutacion, 0.05, 0.05)
-    return crl.validacion(particionado, dataset, crl)[0]
+    print(MAXREGLAS)
+    ag = AlgoritmoGenetico(poblacion, generacion, MAXREGLAS, cruce, mutacion, 0.05, 0.05)
+    r = ag.validacion(particionado, dataset, ag)[0]
+    reglas_str = ag.reglasMejor(dataset.diccionario)
+    return r, reglas_str
 
 
 def plot(data, nombreData, cruce, mutacion):
@@ -40,7 +43,7 @@ def plot(data, nombreData, cruce, mutacion):
     fitnesses = []
     for _ in range(5):
         fitness_data = []
-        ag = AlgoritmoGenetico(20, 100, 10, AlgoritmoGenetico.cruceInterReglas, AlgoritmoGenetico.mutacionReglas, 0.05, 0.05)
+        ag = AlgoritmoGenetico(20, 100, MAXREGLAS, AlgoritmoGenetico.cruceInterReglas, AlgoritmoGenetico.mutacionReglas, 0.05, 0.05)
         ag.entrenamiento(data.datos, data.nominalAtributos, data.diccionario, fitnessData=fitness_data)
         fitnesses.append([f for f, _ in fitness_data])
         medias.append([m for _, m in fitness_data])
@@ -60,13 +63,12 @@ def plot(data, nombreData, cruce, mutacion):
         plt.xlabel("Generaciones")
         plt.ylabel("Fitness")
     plt.title("Fitness medio en "+nombreData)
-    
 
 def espacio_ROC_avg_AG(dataset, times, cruce, mutacion, porcentaje):
     tpr_media = []
     fpr_media = []
     for _ in range(times):
-        ag = AlgoritmoGenetico(150, 200, 5, cruce, mutacion, 0.05, 0.05)
+        ag = AlgoritmoGenetico(150, 200, MAXREGLAS, cruce, mutacion, 0.05, 0.05)
         tpr, fpr = mc.espacioROC(dataset, ag, porcentaje)
         tpr_media.append(tpr)
         fpr_media.append(fpr)
