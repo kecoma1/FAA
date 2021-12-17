@@ -63,6 +63,13 @@ def plot(data, nombreData, cruce, mutacion):
         plt.ylabel("Fitness")
     plt.title("Fitness medio en "+nombreData)
 
+def plot_poblacion(data):
+    x = poblaciones
+    for poblacion in x:
+        for dato in data:
+            y = dato[x]
+
+
 def espacio_ROC_avg_AG(dataset, times, cruce, mutacion, porcentaje):
     tpr_media = []
     fpr_media = []
